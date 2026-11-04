@@ -5,93 +5,93 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alterations-c
 export const adminAuthService = {
   // 1. Admin Sign In
   async login(email, password) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to sign in as admin');
-      }
-      return data;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch')) {
-        console.warn('Backend server offline, falling back to simulated admin session.');
-        return {
-          success: true,
-          requiresTwoFactor: true,
-          email,
-          user: { email, name: 'Admin Workspace Owner', role: 'Admin' },
-          offline: true
-        };
-      }
-      throw err;
+    const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to sign in as admin');
     }
+    return data;
   },
 
   // 2. Admin 2FA Verification
   async verifyTwoFactor(email, code, twoFactorToken) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/auth/verify-2fa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, twoFactorToken })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid 2FA verification code');
-      }
-      if (data.token) {
-        localStorage.setItem('ac_admin_token', data.token);
-        localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
-      }
-      return data;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch')) {
-        console.warn('Backend server offline, falling back to local admin verification.');
-        const mockAdmin = { email, name: 'Admin Workspace Owner', role: 'Admin' };
-        localStorage.setItem('ac_admin_user', JSON.stringify(mockAdmin));
-        return { success: true, user: mockAdmin, offline: true };
-      }
-      throw err;
+    const response = await fetch(`${API_BASE_URL}/admin/auth/verify-2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code, twoFactorToken })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Invalid or expired 2FA code. Please use the code sent to your email or demo code 123456.');
     }
+    if (data.token) {
+      localStorage.setItem('ac_admin_token', data.token);
+      localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+    }
+    return data;
   },
 
   // 3. Admin Forgot Password
   async forgotPassword(email) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      return await response.json();
-    } catch (err) {
-      return { success: true, message: 'Recovery instructions sent.' };
+    const response = await fetch(`${API_BASE_URL}/admin/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to send password reset code.');
     }
+    return data;
   },
 
-  // 4. Admin Activate Account
+  // 3.5 Admin Verify Reset Code
+  async verifyResetCode(email, code) {
+    const response = await fetch(`${API_BASE_URL}/admin/auth/verify-reset-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Invalid or incorrect verification code. Please check your email and try again.');
+    }
+    return data;
+  },
+
+  // 4. Admin Set New Password
+  async resetPassword(email, newPassword) {
+    const response = await fetch(`${API_BASE_URL}/admin/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to update admin password.');
+    }
+    return data;
+  },
+
+  // 5. Admin Activate Account
   async activate(payload) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/auth/activate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to activate admin account');
-      }
-      return data;
-    } catch (err) {
-      return { success: true, message: 'Account activated.' };
+    const response = await fetch(`${API_BASE_URL}/admin/auth/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to activate admin account');
     }
+    return data;
   },
 
-  // 5. Get Stored Admin
+  // 6. Get Stored Admin
   getCurrentAdmin() {
     try {
       const stored = localStorage.getItem('ac_admin_user');
@@ -101,10 +101,9 @@ export const adminAuthService = {
     }
   },
 
-  // 6. Sign Out
+  // 7. Sign Out
   logout() {
     localStorage.removeItem('ac_admin_token');
     localStorage.removeItem('ac_admin_user');
   }
 };
-

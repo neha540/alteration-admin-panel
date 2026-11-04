@@ -168,6 +168,7 @@ export default function App() {
       {/* 07 · Access / Create new password */}
       {currentScreen === 'create-new-password' && (
         <AdminSetNewPasswordScreen
+          email={authEmail}
           onPasswordUpdated={() => setCurrentScreen('password-reset-complete')}
           onBackToSignIn={() => setCurrentScreen('sign-in')}
         />

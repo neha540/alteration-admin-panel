@@ -59,7 +59,7 @@ export default function AdminPasswordResetSentScreen({
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -70,12 +70,16 @@ export default function AdminPasswordResetSentScreen({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await adminAuthService.verifyResetCode(email, fullCode);
       setIsLoading(false);
       if (onContinueToReset) {
         onContinueToReset({ email, code: fullCode });
       }
-    }, 400);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Invalid or incorrect verification code. Please check your email and try again.');
+    }
   };
 
   const handleAutoFillDemo = () => {

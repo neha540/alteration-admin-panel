@@ -36,12 +36,7 @@ export default function AdminSetNewPasswordScreen({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`https://alterations-connect-backend.onrender.com/api/admin/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword: password })
-      });
-      const data = await response.json();
+      await adminAuthService.resetPassword(email, password);
       setIsLoading(false);
       if (onPasswordUpdated) {
         onPasswordUpdated();
