@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminSignInScreen({ 
   onSignIn, 
@@ -15,7 +16,7 @@ export default function AdminSignInScreen({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -26,32 +27,39 @@ export default function AdminSignInScreen({
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-
+    try {
       // Check if simulating access denied
       if (email.toLowerCase().includes('denied') || email.toLowerCase().includes('unauthorized')) {
+        setIsLoading(false);
         if (onAccessDenied) {
           onAccessDenied(email);
           return;
         }
       }
 
-      // Default: require 2FA verification to match the Figma flow
-      if (onRequireTwoFactor) {
-        onRequireTwoFactor({
-          email: email || 'admin@alterationconnect.com',
-          name: 'Admin Workspace Owner',
-          role: 'Super Admin'
-        });
+      const res = await adminAuthService.login(email, password);
+      setIsLoading(false);
+
+      if (res.requiresTwoFactor) {
+        if (onRequireTwoFactor) {
+          onRequireTwoFactor({
+            email: res.email || email,
+            name: res.user?.name || 'Admin Workspace Owner',
+            role: res.user?.role || 'Super Admin',
+            twoFactorToken: res.twoFactorToken
+          });
+        }
       } else if (onSignIn) {
-        onSignIn({
+        onSignIn(res.user || {
           email: email || 'admin@alterationconnect.com',
           name: 'Admin Workspace Owner',
           role: 'Super Admin'
         });
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Invalid credentials. Please verify your email and password.');
+    }
   };
 
   return (

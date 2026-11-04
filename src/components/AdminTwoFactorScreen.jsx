@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, KeyRound } from 'lucide-react';
+import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminTwoFactorScreen({
   onVerify,
   onUseDifferentEmail,
   onUseRecoveryCode,
-  email = 'admin@alterationconnect.com'
+  email = 'admin@alterationconnect.com',
+  twoFactorToken = ''
 }) {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,9 +65,11 @@ export default function AdminTwoFactorScreen({
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const fullCode = isRecoveryMode ? recoveryCode.trim() : code.join('');
 
     if (isRecoveryMode) {
       if (!recoveryCode.trim()) {
@@ -73,7 +77,6 @@ export default function AdminTwoFactorScreen({
         return;
       }
     } else {
-      const fullCode = code.join('');
       if (fullCode.length < 6) {
         setError('Please enter the full 6-digit verification code.');
         return;
@@ -81,19 +84,25 @@ export default function AdminTwoFactorScreen({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const res = await adminAuthService.verifyTwoFactor(email, fullCode, twoFactorToken);
       setIsLoading(false);
       if (onVerify) {
         onVerify({
-          code: isRecoveryMode ? recoveryCode : code.join(''),
-          verified: true
+          code: fullCode,
+          verified: true,
+          user: res.user
         });
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Invalid or expired 2FA code.');
+    }
   };
 
   const handleAutoFillDemo = () => {
-    setCode(['4', '8', '2', '9', '1', '5']);
+    setCode(['1', '2', '3', '4', '5', '6']);
     if (error) setError('');
     inputRefs.current[5]?.focus();
   };
