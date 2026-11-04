@@ -16,11 +16,13 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('sign-in');
   const [adminUser, setAdminUser] = useState(null);
   const [authEmail, setAuthEmail] = useState('admin@alterationconnect.com');
+  const [serverOtp, setServerOtp] = useState('');
   const [dashboardTab, setDashboardTab] = useState('overview');
   const [dashboardModal, setDashboardModal] = useState(null);
 
   const handleSignInSubmit = (userData) => {
     setAuthEmail(userData.email);
+    setServerOtp(userData.otp || userData.code || '');
     setCurrentScreen('two-factor');
   };
 
@@ -120,6 +122,7 @@ export default function App() {
       {currentScreen === 'two-factor' && (
         <AdminTwoFactorScreen
           email={authEmail}
+          serverOtp={serverOtp}
           onVerify={handleTwoFactorVerified}
           onUseDifferentEmail={() => setCurrentScreen('sign-in')}
           onUseRecoveryCode={() => setCurrentScreen('recovery-code')}
@@ -132,6 +135,7 @@ export default function App() {
           onBackToSignIn={() => setCurrentScreen('sign-in')}
           onActivated={(userData) => {
             setAuthEmail(userData.email);
+            setServerOtp(userData.otp || userData.code || '');
             setCurrentScreen('two-factor');
           }}
         />
@@ -149,8 +153,9 @@ export default function App() {
       {currentScreen === 'forgot-password' && (
         <AdminForgotPasswordScreen
           onBackToSignIn={() => setCurrentScreen('sign-in')}
-          onSendResetLink={(email) => {
+          onSendResetLink={(email, resData) => {
             setAuthEmail(email);
+            setServerOtp(resData?.otp || resData?.code || '');
             setCurrentScreen('password-reset-sent');
           }}
         />
@@ -160,11 +165,15 @@ export default function App() {
       {currentScreen === 'password-reset-sent' && (
         <AdminPasswordResetSentScreen
           email={authEmail}
+          serverOtp={serverOtp}
           onContinueToReset={(data) => {
             if (data?.email) setAuthEmail(data.email);
             setCurrentScreen('create-new-password');
           }}
-          onResendLink={() => adminAuthService.forgotPassword(authEmail)}
+          onResendLink={async () => {
+            const res = await adminAuthService.forgotPassword(authEmail);
+            if (res?.otp || res?.code) setServerOtp(res.otp || res.code);
+          }}
         />
       )}
 

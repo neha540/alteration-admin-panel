@@ -1,3 +1,4 @@
+import OtpSnackbar from './OtpSnackbar';
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, KeyRound } from 'lucide-react';
 import { adminAuthService } from '../services/adminAuthService';
@@ -7,7 +8,8 @@ export default function AdminTwoFactorScreen({
   onUseDifferentEmail,
   onUseRecoveryCode,
   email = 'admin@alterationconnect.com',
-  twoFactorToken = ''
+  twoFactorToken = '',
+  serverOtp = ''
 }) {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,6 +103,17 @@ export default function AdminTwoFactorScreen({
     }
   };
 
+    const handleAutoFillOtp = (otpVal) => {
+    const digits = (otpVal || '123456').replace(/\D/g, '').slice(0, 6).split('');
+    const newCode = [...code];
+    for (let i = 0; i < 6; i++) {
+      newCode[i] = digits[i] || '';
+    }
+    setCode(newCode);
+    if (error) setError('');
+    inputRefs.current[5]?.focus();
+  };
+
   const handleAutoFillDemo = () => {
     setCode(['1', '2', '3', '4', '5', '6']);
     if (error) setError('');
@@ -109,6 +122,7 @@ export default function AdminTwoFactorScreen({
 
   return (
     <div className="max-w-[420px] w-full mx-auto">
+      <OtpSnackbar otp={serverOtp} onAutoFill={handleAutoFillOtp} />
       {/* Title & Subheading - Centered to match Figma Screenshot */}
       <div className="mb-7 text-center">
         <h2 className="text-2xl sm:text-[30px] font-bold text-slate-900 tracking-tight leading-tight">

@@ -22,10 +22,10 @@ export default function AdminForgotPasswordScreen({
     setIsLoading(true);
 
     try {
-      await adminAuthService.forgotPassword(email);
+      const res = await adminAuthService.forgotPassword(email);
       setIsLoading(false);
       if (onSendResetLink) {
-        onSendResetLink(email);
+        onSendResetLink(email, res);
       }
     } catch (err) {
       setIsLoading(false);

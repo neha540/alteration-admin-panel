@@ -46,7 +46,8 @@ export default function AdminSignInScreen({
             email: res.email || email,
             name: res.user?.name || 'Admin Workspace Owner',
             role: res.user?.role || 'Admin',
-            twoFactorToken: res.twoFactorToken
+            twoFactorToken: res.twoFactorToken,
+            otp: res.otp || res.code
           });
         }
       } else if (onSignIn) {

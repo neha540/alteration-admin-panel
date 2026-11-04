@@ -40,7 +40,8 @@ export default function AdminActivateAccountScreen({
         onActivated({
           name: fullName,
           email: workEmail,
-          role: 'Admin'
+          role: 'Admin',
+          otp: res.otp || res.code
         });
       }
     } catch (err) {
