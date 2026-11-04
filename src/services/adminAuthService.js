@@ -1,6 +1,6 @@
 // Admin & Studio Auth Service for Alteration Connect Admin Workspace
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alterations-connect-backend.onrender.com/api';
 
 export const adminAuthService = {
   // 1. Admin Sign In
@@ -107,3 +107,4 @@ export const adminAuthService = {
     localStorage.removeItem('ac_admin_user');
   }
 };
+
