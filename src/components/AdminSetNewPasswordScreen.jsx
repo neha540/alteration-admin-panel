@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminSetNewPasswordScreen({ 
   onPasswordUpdated, 
-  onBackToSignIn 
+  onBackToSignIn,
+  email = 'admin@alterationconnect.com'
 }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -12,7 +14,7 @@ export default function AdminSetNewPasswordScreen({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -32,12 +34,22 @@ export default function AdminSetNewPasswordScreen({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(`https://alterations-connect-backend.onrender.com/api/admin/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword: password })
+      });
+      const data = await response.json();
       setIsLoading(false);
       if (onPasswordUpdated) {
         onPasswordUpdated();
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Failed to update admin password.');
+    }
   };
 
   return (

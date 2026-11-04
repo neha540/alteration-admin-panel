@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminActivateAccountScreen({ 
   onBackToSignIn, 
@@ -12,7 +13,7 @@ export default function AdminActivateAccountScreen({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -27,16 +28,25 @@ export default function AdminActivateAccountScreen({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const res = await adminAuthService.activate({
+        fullName,
+        email: workEmail,
+        password
+      });
       setIsLoading(false);
       if (onActivated) {
         onActivated({
           name: fullName,
           email: workEmail,
-          role: 'Admin'
+          role: 'Studio Admin'
         });
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Failed to activate admin account.');
+    }
   };
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminForgotPasswordScreen({ 
   onBackToSignIn, 
@@ -9,7 +10,7 @@ export default function AdminForgotPasswordScreen({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -19,12 +20,17 @@ export default function AdminForgotPasswordScreen({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      await adminAuthService.forgotPassword(email);
       setIsLoading(false);
       if (onSendResetLink) {
         onSendResetLink(email);
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Failed to send recovery email.');
+    }
   };
 
   return (
