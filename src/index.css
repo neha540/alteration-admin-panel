@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* ==================== ARIAL FONT DEFINITIONS ==================== */
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Regular.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Regular.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Regular.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Bold.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Bold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Bold.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Bold.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Bold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-Italic.ttf') format('truetype'),
+       url('/assets/fonts/Arial-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('./assets/fonts/Arial-BoldItalic.ttf') format('truetype'),
+       url('/assets/fonts/Arial-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+  --font-arial: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+  --navy-panel: #14253E;
+  --brand-blue: #2563EB;
+  --brand-teal: #14B8A6;
+}
+
+*,
+*::before,
+*::after,
+html,
+body,
+button,
+input,
+textarea,
+select,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+a,
+div,
+aside,
+main,
+header,
+footer,
+label {
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F4F6F9;
+  color: #0F172A;
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
