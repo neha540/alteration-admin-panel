@@ -22,8 +22,8 @@ export default function AdminActivateAccountScreen({
       return;
     }
 
-    if (password.length < 12) {
-      setError('Password must be at least 12 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
 
@@ -40,7 +40,7 @@ export default function AdminActivateAccountScreen({
         onActivated({
           name: fullName,
           email: workEmail,
-          role: 'Studio Admin'
+          role: 'Admin'
         });
       }
     } catch (err) {
@@ -138,7 +138,7 @@ export default function AdminActivateAccountScreen({
           </div>
           {/* Helper note */}
           <p className="text-[11.5px] text-slate-500 mt-1.5">
-            Use at least 12 characters. Avoid reusing a password.
+            Use at least 8 characters. Avoid reusing a password.
           </p>
         </div>
 
