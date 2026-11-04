@@ -23,7 +23,7 @@ export const adminAuthService = {
           success: true,
           requiresTwoFactor: true,
           email,
-          user: { email, name: 'Admin Workspace Owner', role: 'Super Admin' },
+          user: { email, name: 'Admin Workspace Owner', role: 'Admin' },
           offline: true
         };
       }
@@ -51,7 +51,7 @@ export const adminAuthService = {
     } catch (err) {
       if (err.message.includes('Failed to fetch')) {
         console.warn('Backend server offline, falling back to local admin verification.');
-        const mockAdmin = { email, name: 'Admin Workspace Owner', role: 'Super Admin' };
+        const mockAdmin = { email, name: 'Admin Workspace Owner', role: 'Admin' };
         localStorage.setItem('ac_admin_user', JSON.stringify(mockAdmin));
         return { success: true, user: mockAdmin, offline: true };
       }

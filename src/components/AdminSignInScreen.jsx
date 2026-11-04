@@ -45,7 +45,7 @@ export default function AdminSignInScreen({
           onRequireTwoFactor({
             email: res.email || email,
             name: res.user?.name || 'Admin Workspace Owner',
-            role: res.user?.role || 'Super Admin',
+            role: res.user?.role || 'Admin',
             twoFactorToken: res.twoFactorToken
           });
         }
@@ -53,7 +53,7 @@ export default function AdminSignInScreen({
         onSignIn(res.user || {
           email: email || 'admin@alterationconnect.com',
           name: 'Admin Workspace Owner',
-          role: 'Super Admin'
+          role: 'Admin'
         });
       }
     } catch (err) {

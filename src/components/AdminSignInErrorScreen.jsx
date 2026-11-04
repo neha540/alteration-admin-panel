@@ -23,7 +23,7 @@ export default function AdminSignInErrorScreen({
         onSignIn({
           email,
           name: 'Admin Workspace Owner',
-          role: 'Super Admin'
+          role: 'Admin'
         });
       }
     }, 600);
