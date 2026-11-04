@@ -112,12 +112,12 @@ export default function AdminTwoFactorScreen({
       {/* Title & Subheading - Centered to match Figma Screenshot */}
       <div className="mb-7 text-center">
         <h2 className="text-2xl sm:text-[30px] font-bold text-slate-900 tracking-tight leading-tight">
-          {isRecoveryMode ? 'Enter recovery code.' : 'Verify it’s you.'}
+          {isRecoveryMode ? 'Enter recovery code.' : "Verify it's you."}
         </h2>
         <p className="text-[13.5px] text-slate-500 font-normal mt-2 leading-relaxed">
           {isRecoveryMode
             ? 'Enter one of your 8-character emergency backup recovery codes.'
-            : 'Enter the 6-digit code from your authenticator app.'}
+            : `Enter the 6-digit security code sent to ${email}.`}
         </p>
       </div>
 
