@@ -160,8 +160,11 @@ export default function App() {
       {currentScreen === 'password-reset-sent' && (
         <AdminPasswordResetSentScreen
           email={authEmail}
-          onContinueToReset={() => setCurrentScreen('create-new-password')}
-          onResendLink={() => {}}
+          onContinueToReset={(data) => {
+            if (data?.email) setAuthEmail(data.email);
+            setCurrentScreen('create-new-password');
+          }}
+          onResendLink={() => adminAuthService.forgotPassword(authEmail)}
         />
       )}
 
