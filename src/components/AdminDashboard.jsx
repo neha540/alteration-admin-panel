@@ -204,7 +204,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
             {/* User Profile Pill */}
             <div className="flex items-center gap-2.5 pl-1">
               <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700">
-                {user?.name ? user.name.split(' ').map(n=>n[0]).join('').slice(0, 2).toUpperCase() : (user?.fullName ? user.fullName.split(' ').map(n=>n[0]).join('').slice(0, 2).toUpperCase() : 'PA')}
+                {(user?.name || user?.fullName || 'Platform Admin').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="hidden sm:block text-left leading-tight">
                 <span className="font-bold text-xs text-slate-900 block">

@@ -14,9 +14,19 @@ import AdminRecoveryCodeScreen from './components/AdminRecoveryCodeScreen';
 import AdminDashboard from './components/AdminDashboard';
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('sign-in');
-  const [adminUser, setAdminUser] = useState(null);
-  const [authEmail, setAuthEmail] = useState('admin@alterationconnect.com');
+  const [currentScreen, setCurrentScreen] = useState(() => {
+    const token = typeof adminAuthService !== 'undefined' ? adminAuthService.getToken() : null;
+    const admin = typeof adminAuthService !== 'undefined' ? adminAuthService.getCurrentAdmin() : null;
+    if (token && admin) return 'dashboard';
+    return 'sign-in';
+  });
+  const [adminUser, setAdminUser] = useState(() => {
+    return typeof adminAuthService !== 'undefined' ? adminAuthService.getCurrentAdmin() : null;
+  });
+  const [authEmail, setAuthEmail] = useState(() => {
+    const admin = typeof adminAuthService !== 'undefined' ? adminAuthService.getCurrentAdmin() : null;
+    return admin?.email || 'admin@alterationconnect.com';
+  });
   const [serverOtp, setServerOtp] = useState('');
   const [dashboardTab, setDashboardTab] = useState('overview');
   const [dashboardModal, setDashboardModal] = useState(null);
@@ -44,18 +54,18 @@ export default function App() {
     setCurrentScreen('two-factor');
   };
 
-  const handleTwoFactorVerified = () => {
-    adminAuthService.getProfile().then(liveUser => {
-      if (liveUser) setAdminUser(liveUser);
-    }).catch(() => {});
-    const saved = adminAuthService.getCurrentAdmin();
-    setAdminUser(saved || {
+  const handleTwoFactorVerified = (verifiedData) => {
+    const user = verifiedData?.user || adminAuthService.getCurrentAdmin() || {
       name: 'Platform Admin',
       email: authEmail,
       role: 'Platform Admin'
-    });
+    };
+    setAdminUser(user);
     setDashboardTab('overview');
     setCurrentScreen('dashboard');
+    adminAuthService.getProfile().then(liveUser => {
+      if (liveUser) setAdminUser(liveUser);
+    }).catch(() => {});
   };
 
   const handleBack = () => {
