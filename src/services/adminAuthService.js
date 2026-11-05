@@ -14,6 +14,15 @@ export const adminAuthService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to sign in as admin');
     }
+    if (data.token || data.accessToken) {
+      localStorage.setItem('ac_admin_token', data.token || data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('ac_admin_refresh_token', data.refreshToken);
+      }
+      if (data.user) {
+        localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+      }
+    }
     return data;
   },
 
@@ -28,9 +37,14 @@ export const adminAuthService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Invalid or expired 2FA code. Please use the code sent to your email or demo code 123456.');
     }
-    if (data.token) {
-      localStorage.setItem('ac_admin_token', data.token);
-      localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+    if (data.token || data.accessToken) {
+      localStorage.setItem('ac_admin_token', data.token || data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('ac_admin_refresh_token', data.refreshToken);
+      }
+      if (data.user) {
+        localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+      }
     }
     return data;
   },
@@ -88,10 +102,47 @@ export const adminAuthService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to activate admin account');
     }
+    if (data.token || data.accessToken) {
+      localStorage.setItem('ac_admin_token', data.token || data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('ac_admin_refresh_token', data.refreshToken);
+      }
+      if (data.user) {
+        localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+      }
+    }
     return data;
   },
 
-  // 6. Get Stored Admin
+  // 6. Refresh Admin Token
+  async refreshToken() {
+    try {
+      const storedRefresh = localStorage.getItem('ac_admin_refresh_token');
+      if (!storedRefresh) return null;
+
+      const response = await fetch(`${API_BASE_URL}/admin/auth/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: storedRefresh })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        localStorage.setItem('ac_admin_token', data.token || data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('ac_admin_refresh_token', data.refreshToken);
+        }
+        if (data.user) {
+          localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+        }
+        return data;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  // 7. Get Stored Admin
   getCurrentAdmin() {
     try {
       const stored = localStorage.getItem('ac_admin_user');
@@ -101,9 +152,15 @@ export const adminAuthService = {
     }
   },
 
-  // 7. Sign Out
+  // 8. Get Stored Token
+  getToken() {
+    return localStorage.getItem('ac_admin_token') || null;
+  },
+
+  // 9. Sign Out
   logout() {
     localStorage.removeItem('ac_admin_token');
+    localStorage.removeItem('ac_admin_refresh_token');
     localStorage.removeItem('ac_admin_user');
   }
 };

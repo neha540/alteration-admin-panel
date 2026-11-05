@@ -69,3 +69,4 @@ export default function OtpSnackbar({ otp, onAutoFill }) {
     </div>
   );
 }
+

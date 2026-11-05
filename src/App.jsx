@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminAuthService } from './services/adminAuthService';
 import AdminAuthLayout from './components/AdminAuthLayout';
 import AdminSignInScreen from './components/AdminSignInScreen';
 import AdminTwoFactorScreen from './components/AdminTwoFactorScreen';
@@ -19,6 +20,19 @@ export default function App() {
   const [serverOtp, setServerOtp] = useState('');
   const [dashboardTab, setDashboardTab] = useState('overview');
   const [dashboardModal, setDashboardModal] = useState(null);
+  // Restore persistent admin session on mount
+  useEffect(() => {
+    const admin = adminAuthService.getCurrentAdmin();
+    const token = adminAuthService.getToken();
+    if (admin && token) {
+      setAdminUser(admin);
+      setDashboardTab('overview');
+      setCurrentScreen('dashboard');
+      // Background silent refresh
+      adminAuthService.refreshToken().catch(() => {});
+    }
+  }, []);
+
 
   const handleSignInSubmit = (userData) => {
     setAuthEmail(userData.email);
@@ -27,7 +41,8 @@ export default function App() {
   };
 
   const handleTwoFactorVerified = () => {
-    setAdminUser({
+    const saved = adminAuthService.getCurrentAdmin();
+    setAdminUser(saved || {
       name: 'Platform Admin',
       email: authEmail,
       role: 'Platform Admin'
