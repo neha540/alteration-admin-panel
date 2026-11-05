@@ -28,6 +28,10 @@ export default function App() {
       setAdminUser(admin);
       setDashboardTab('overview');
       setCurrentScreen('dashboard');
+      // Fetch live admin profile from GET /api/admin/auth/me
+      adminAuthService.getProfile().then(liveUser => {
+        if (liveUser) setAdminUser(liveUser);
+      }).catch(() => {});
       // Background silent refresh
       adminAuthService.refreshToken().catch(() => {});
     }
@@ -41,6 +45,9 @@ export default function App() {
   };
 
   const handleTwoFactorVerified = () => {
+    adminAuthService.getProfile().then(liveUser => {
+      if (liveUser) setAdminUser(liveUser);
+    }).catch(() => {});
     const saved = adminAuthService.getCurrentAdmin();
     setAdminUser(saved || {
       name: 'Platform Admin',

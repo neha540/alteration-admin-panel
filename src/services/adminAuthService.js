@@ -142,7 +142,31 @@ export const adminAuthService = {
     }
   },
 
-  // 7. Get Stored Admin
+  // 7. Get Live Admin Profile from GET /api/admin/auth/me
+  async getProfile() {
+    try {
+      const token = this.getToken();
+      if (!token) return this.getCurrentAdmin();
+
+      const response = await fetch(`${API_BASE_URL}/admin/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.user) {
+        localStorage.setItem('ac_admin_user', JSON.stringify(data.user));
+        return data.user;
+      }
+      return this.getCurrentAdmin();
+    } catch {
+      return this.getCurrentAdmin();
+    }
+  },
+
+  // 8. Get Stored Admin
   getCurrentAdmin() {
     try {
       const stored = localStorage.getItem('ac_admin_user');
