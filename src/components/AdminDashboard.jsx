@@ -66,7 +66,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
         className="w-64 xl:w-72 text-white shrink-0 flex flex-col justify-between p-5 select-none h-screen sticky top-0 overflow-y-auto no-scrollbar"
       >
         <div>
-          {/* Brand Logo & Platform Admin Heading */}
+          {/* Brand Logo & Admin Heading */}
           <div className="pb-5 border-b border-slate-700/50">
             <div className="flex items-center gap-2.5">
               <div className="bg-white rounded-lg p-1.5 inline-flex items-center justify-center">
@@ -77,7 +77,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
                   Alteration Connect
                 </span>
                 <span className="text-[9.5px] font-bold text-slate-400 tracking-[0.16em] uppercase block mt-0.5">
-                  PLATFORM ADMIN
+                  ADMIN
                 </span>
               </div>
             </div>
@@ -204,11 +204,11 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
             {/* User Profile Pill */}
             <div className="flex items-center gap-2.5 pl-1">
               <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700">
-                {(user?.name || user?.fullName || 'Platform Admin').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0, 2).toUpperCase()}
+                {(user?.name || user?.fullName || 'Admin').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="hidden sm:block text-left leading-tight">
                 <span className="font-bold text-xs text-slate-900 block">
-                  {user?.name || user?.fullName || 'Platform Admin'}
+                  {user?.name || user?.fullName || 'Admin'}
                 </span>
                 <span className="text-[11px] text-slate-400 block truncate max-w-[160px]">
                   {user?.email || 'admin@alterationconnect.com'}

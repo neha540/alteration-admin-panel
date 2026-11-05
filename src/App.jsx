@@ -121,6 +121,7 @@ export default function App() {
         initialTab={dashboardTab}
         initialModal={dashboardModal}
         onSignOut={() => {
+          adminAuthService.logout();
           setAdminUser(null);
           setCurrentScreen('sign-in');
         }}
