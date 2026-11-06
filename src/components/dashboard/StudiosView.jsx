@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminDataService } from '../../services/adminDataService';
 import { Search, Plus, Eye, Check } from 'lucide-react';
 import StudioReviewModal from './StudioReviewModal';
 
@@ -7,6 +8,19 @@ export default function StudiosView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
+  const [liveStudios, setLiveStudios] = useState(null);
+
+  const fetchStudios = () => {
+    adminDataService.getStudios().then(data => {
+      if (data && data.length > 0) {
+        setLiveStudios(data);
+      }
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchStudios();
+  }, []);
 
   const studiosData = [
     {
@@ -107,7 +121,24 @@ export default function StudiosView() {
     }
   ];
 
-  const filteredStudios = studiosData.filter((s) => {
+  const currentStudios = liveStudios ? liveStudios.map(s => ({
+    id: s.id,
+    name: s.name,
+    owner: s.owner || 'Owner',
+    initials: s.initials || 'ST',
+    avatarBg: s.bgTeal ? 'bg-[#F5EFE6] text-[#78593C]' : 'bg-slate-100 text-slate-700',
+    city: s.city,
+    zip: (s.address && s.address.slice(-5)) || '78701',
+    reviewStatus: s.status || 'Approved',
+    reviewColor: s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
+    membership: s.status === 'Approved' ? 'Paid' : 'Payment required',
+    membershipColor: s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
+    listing: s.status === 'Approved' ? 'Live' : 'Hidden',
+    listingColor: s.status === 'Approved' ? 'text-emerald-600' : 'text-slate-400',
+    action: s.status === 'Approved' ? 'Manage' : 'Review'
+  })) : studiosData;
+
+  const filteredStudios = currentStudios.filter((s) => {
     // Filter tab
     if (filterTab === 'awaiting' && s.reviewStatus !== 'In review') return false;
     if (filterTab === 'approved' && s.reviewStatus !== 'Approved') return false;

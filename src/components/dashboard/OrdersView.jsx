@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminDataService } from '../../services/adminDataService';
 import { Search, Download, ChevronDown } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 
@@ -7,6 +8,15 @@ export default function OrdersView() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [studioFilter, setStudioFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [liveOrders, setLiveOrders] = useState(null);
+
+  useEffect(() => {
+    adminDataService.getOrders().then(data => {
+      if (data && data.length > 0) {
+        setLiveOrders(data);
+      }
+    }).catch(() => {});
+  }, []);
 
   const ordersData = [
     {
@@ -61,10 +71,25 @@ export default function OrdersView() {
     }
   ];
 
-  const filteredOrders = ordersData.filter((o) => {
-    if (statusFilter !== 'all' && o.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
-    if (studioFilter !== 'all' && o.studio !== studioFilter) return false;
+  const currentOrders = liveOrders ? liveOrders.map(o => ({
+    id: o.id,
+    title: o.title,
+    customer: o.customerName || "Customer",
+    studio: o.studioName || "The Modern Hem",
+    status: o.status || "Quote sent",
+    statusColor: o.status === "Completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200/80" :
+                 o.status === "In progress" ? "bg-sky-50 text-sky-700 border-sky-200/80" :
+                 o.status === "Quote ready" ? "bg-blue-50 text-blue-700 border-blue-200/80" :
+                 "bg-amber-50 text-amber-700 border-amber-200/80",
+    amount: o.price ? ("$" + o.price) : "Pending",
+    subStatus: o.isPaid ? "Paid" : ""
+  })) : ordersData;
+
+  const filteredOrders = currentOrders.filter((o) => {
+    if (statusFilter !== "all" && o.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+    if (studioFilter !== "all" && o.studio !== studioFilter) return false;
     if (searchQuery.trim()) {
+
       const q = searchQuery.toLowerCase();
       return (
         o.title.toLowerCase().includes(q) ||
@@ -247,4 +272,3 @@ export default function OrdersView() {
     </div>
   );
 }
-

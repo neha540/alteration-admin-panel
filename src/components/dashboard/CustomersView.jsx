@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminDataService } from '../../services/adminDataService';
 import { Search, Users, Heart, CheckCircle2 } from 'lucide-react';
 import CustomerDetailsModal from './CustomerDetailsModal';
 
 export default function CustomersView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [liveCustomers, setLiveCustomers] = useState(null);
+
+  useEffect(() => {
+    adminDataService.getCustomers().then(data => {
+      if (data && data.length > 0) {
+        setLiveCustomers(data);
+      }
+    }).catch(() => {});
+  }, []);
 
   const customersData = [
     {
@@ -42,7 +52,19 @@ export default function CustomersView() {
     }
   ];
 
-  const filteredCustomers = customersData.filter((c) => {
+  const currentCustomers = liveCustomers ? liveCustomers.map(u => ({
+    id: u.id,
+    name: u.fullName || u.name,
+    email: u.email,
+    initials: u.initials || 'CU',
+    avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
+    orders: u.ordersCount || 1,
+    studiosVisited: 1,
+    paidValue: u.paidValue || '$68',
+    activeOrders: 1
+  })) : customersData;
+
+  const filteredCustomers = currentCustomers.filter((c) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
