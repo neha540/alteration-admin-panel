@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
-import { Search, Plus, Eye, Check } from 'lucide-react';
+import { Search, Plus, Eye, Check, Upload, X, Image as ImageIcon } from 'lucide-react';
 import StudioReviewModal from './StudioReviewModal';
 
 export default function StudiosView() {
@@ -9,149 +9,182 @@ export default function StudiosView() {
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
   const [liveStudios, setLiveStudios] = useState(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [newStudioForm, setNewStudioForm] = useState({
+    studioName: '',
+    ownerName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    specialties: ['Everyday'],
+    startingPrice: '$25',
+    turnaround: '2–3 days',
+    hours: 'Mon–Sat 9:30 AM – 7:30 PM',
+    image: '',
+    bio: ''
+  });
+
+  const availableSpecialties = [
+    'Everyday',
+    'Suiting & Formalwear',
+    'Denim & Casual',
+    'Bridal & Delicate',
+    'Leather & Outerwear',
+    'Repairs & Restorations'
+  ];
+
+  const handleToggleSpecialty = (spec) => {
+    setNewStudioForm(prev => {
+      const exists = prev.specialties.includes(spec);
+      const next = exists 
+        ? prev.specialties.filter(s => s !== spec)
+        : [...prev.specialties, spec];
+      return { ...prev, specialties: next.length > 0 ? next : ['Everyday'] };
+    });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewStudioForm(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchStudios = () => {
     adminDataService.getStudios().then(data => {
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setLiveStudios(data);
+        window.dispatchEvent(new Event('admin_studios_updated'));
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn('Failed to load studios:', err);
+    });
   };
 
   useEffect(() => {
     fetchStudios();
   }, []);
 
-  const studiosData = [
-    {
-      id: 1,
-      name: 'The Modern Hem',
-      owner: 'Olivia Bennett',
-      initials: 'MH',
-      avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
-      city: 'Austin, TX',
-      zip: '78701',
-      reviewStatus: 'Approved',
-      reviewColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      membership: 'Paid',
-      membershipColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      listing: 'Live',
-      listingColor: 'text-emerald-600',
-      action: 'Manage'
-    },
-    {
-      id: 2,
-      name: 'Northline Tailoring',
-      owner: 'James Parker',
-      initials: 'NT',
-      avatarBg: 'bg-slate-100 text-slate-700',
-      city: 'North Austin, TX',
-      zip: '78758',
-      reviewStatus: 'Approved',
-      reviewColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      membership: 'Paid',
-      membershipColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      listing: 'Live',
-      listingColor: 'text-emerald-600',
-      action: 'Manage'
-    },
-    {
-      id: 3,
-      name: 'Atelier Rose',
-      owner: 'Isabella Rose',
-      initials: 'AR',
-      avatarBg: 'bg-rose-50 text-rose-700',
-      city: 'Westlake, TX',
-      zip: '78746',
-      reviewStatus: 'Approved',
-      reviewColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      membership: 'Paid',
-      membershipColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      listing: 'Live',
-      listingColor: 'text-emerald-600',
-      action: 'Manage'
-    },
-    {
-      id: 4,
-      name: 'Good Form Studio',
-      owner: 'Avery Brooks',
-      initials: 'GF',
-      avatarBg: 'bg-teal-50 text-teal-700',
-      city: 'South Austin, TX',
-      zip: '78745',
-      reviewStatus: 'Approved',
-      reviewColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      membership: 'Paid',
-      membershipColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      listing: 'Live',
-      listingColor: 'text-emerald-600',
-      action: 'Manage'
-    },
-    {
-      id: 5,
-      name: 'Round Rock Stitch',
-      owner: 'Emma Hayes',
-      initials: 'RS',
-      avatarBg: 'bg-emerald-50 text-emerald-800',
-      city: 'Round Rock, TX',
-      zip: '78664',
-      reviewStatus: 'In review',
-      reviewColor: 'bg-amber-50 text-amber-700 border-amber-200/80',
-      membership: 'Payment required',
-      membershipColor: 'bg-amber-50 text-amber-700 border-amber-200/80',
-      listing: 'Hidden',
-      listingColor: 'text-slate-400',
-      action: 'Review'
-    },
-    {
-      id: 6,
-      name: 'Congress Clothing Care',
-      owner: 'Noah Ellis',
-      initials: 'CC',
-      avatarBg: 'bg-amber-50 text-amber-800',
-      city: 'South Congress, TX',
-      zip: '78704',
-      reviewStatus: 'In review',
-      reviewColor: 'bg-amber-50 text-amber-700 border-amber-200/80',
-      membership: 'Payment required',
-      membershipColor: 'bg-amber-50 text-amber-700 border-amber-200/80',
-      listing: 'Hidden',
-      listingColor: 'text-slate-400',
-      action: 'Review'
+  // Handle Admin registration directly to backend
+  const handleAdminRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newStudioForm.studioName.trim()) return;
+    setIsRegistering(true);
+    try {
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const apiBase = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
+      
+      const cityState = [newStudioForm.city.trim(), newStudioForm.state.trim()].filter(Boolean).join(', ');
+      await fetch(`${apiBase}/studios/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newStudioForm.studioName.trim(),
+          owner: newStudioForm.ownerName.trim() || 'Owner',
+          email: newStudioForm.email.trim() || `${newStudioForm.studioName.toLowerCase().replace(/[^a-z0-9]/g, '')}@studio.example`,
+          phone: newStudioForm.phone.trim() || '+1 (512) 555-0100',
+          address: newStudioForm.address.trim() || cityState || 'Austin, TX',
+          city: newStudioForm.city.trim() || 'Austin',
+          state: newStudioForm.state.trim() || 'TX',
+          zip: newStudioForm.zip.trim() || '78701',
+          specialties: newStudioForm.specialties,
+          startingPrice: newStudioForm.startingPrice.trim() || '$25',
+          turnaround: newStudioForm.turnaround.trim() || '2–3 days',
+          hours: newStudioForm.hours.trim() || 'Mon–Sat 9:30 AM – 7:30 PM',
+          image: newStudioForm.image || '',
+          bio: newStudioForm.bio.trim() || ''
+        })
+      });
+      setRegisterModalOpen(false);
+      setNewStudioForm({
+        studioName: '',
+        ownerName: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: '',
+        specialties: ['Everyday'],
+        startingPrice: '$25',
+        turnaround: '2–3 days',
+        hours: 'Mon–Sat 9:30 AM – 7:30 PM',
+        image: '',
+        bio: ''
+      });
+      fetchStudios();
+    } catch (err) {
+      console.warn('Error registering studio:', err);
+    } finally {
+      setIsRegistering(false);
     }
-  ];
+  };
 
-  const currentStudios = liveStudios ? liveStudios.map(s => ({
-    id: s.id,
-    name: s.name,
-    owner: s.owner || 'Owner',
-    initials: s.initials || 'ST',
-    avatarBg: s.bgTeal ? 'bg-[#F5EFE6] text-[#78593C]' : 'bg-slate-100 text-slate-700',
-    city: s.city,
-    zip: (s.address && s.address.slice(-5)) || '78701',
-    reviewStatus: s.status || 'Approved',
-    reviewColor: s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
-    membership: s.status === 'Approved' ? 'Paid' : 'Payment required',
-    membershipColor: s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
-    listing: s.status === 'Approved' ? 'Live' : 'Hidden',
-    listingColor: s.status === 'Approved' ? 'text-emerald-600' : 'text-slate-400',
-    action: s.status === 'Approved' ? 'Manage' : 'Review'
-  })) : studiosData;
+  // Map live studios from backend into UI shape
+  const currentStudios = (liveStudios || []).map(s => {
+    const isApproved = s.status === 'Approved';
+    const isSuspended = s.status === 'Suspended' || s.status === 'Declined';
+    return {
+      id: s.id,
+      name: s.name,
+      owner: s.owner || 'Owner',
+      initials: s.initials || (s.name ? s.name.split(' ').map(n=>n[0]).join('').slice(0, 2).toUpperCase() : 'ST'),
+      avatarBg: s.bgTeal ? 'bg-[#F5EFE6] text-[#78593C]' : 'bg-slate-100 text-slate-700',
+      city: s.city || '',
+      zip: s.zip || ((s.address && s.address.match(/\b\d{5,6}\b/)) ? s.address.match(/\b\d{5,6}\b/)[0] : (s.city && s.city.match(/\b\d{5,6}\b/) ? s.city.match(/\b\d{5,6}\b/)[0] : '')),
+      startingPrice: s.startingPrice,
+      turnaround: s.turnaround,
+      hours: s.hours,
+      image: s.image,
+      reviewStatus: s.status || 'In review',
+      reviewColor: isApproved 
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+        : isSuspended
+        ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+        : 'bg-amber-50 text-amber-700 border-amber-200/80',
+      membership: isApproved ? 'Paid' : 'Payment required',
+      membershipColor: isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
+      listing: isApproved ? 'Live' : 'Hidden',
+      listingColor: isApproved ? 'text-emerald-600' : 'text-slate-400',
+      action: isApproved ? 'Manage' : 'Review',
+      phone: s.phone,
+      email: s.email,
+      address: s.address,
+      bio: s.bio,
+      specialties: s.specialties,
+      hasConflict: Boolean(s.hasConflict),
+      ...s
+    };
+  });
 
+  // Dynamic badge counts based on live data
+  const allCount = currentStudios.length;
+  const awaitingCount = currentStudios.filter(s => s.reviewStatus === 'In review').length;
+  const approvedCount = currentStudios.filter(s => s.reviewStatus === 'Approved').length;
+  const declinedCount = currentStudios.filter(s => s.reviewStatus === 'Declined' || s.reviewStatus === 'Suspended').length;
+
+  // Filter based on active tab and search query
   const filteredStudios = currentStudios.filter((s) => {
-    // Filter tab
+    // 1. Tab filter
     if (filterTab === 'awaiting' && s.reviewStatus !== 'In review') return false;
     if (filterTab === 'approved' && s.reviewStatus !== 'Approved') return false;
-    if (filterTab === 'declined' && s.reviewStatus === 'Approved') return false;
+    if (filterTab === 'declined' && s.reviewStatus !== 'Declined' && s.reviewStatus !== 'Suspended') return false;
 
-    // Search query
+    // 2. Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
         s.name.toLowerCase().includes(q) ||
         s.owner.toLowerCase().includes(q) ||
-        s.city.toLowerCase().includes(q) ||
-        s.zip.includes(q)
+        (s.city && s.city.toLowerCase().includes(q)) ||
+        (s.zip && s.zip.includes(q))
       );
     }
     return true;
@@ -190,7 +223,7 @@ export default function StudiosView() {
               Registered studios
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              6 businesses in the network
+              {allCount} {allCount === 1 ? 'business' : 'businesses'} in the network
             </p>
           </div>
 
@@ -206,7 +239,7 @@ export default function StudiosView() {
           </div>
         </div>
 
-        {/* Filter Tabs */}
+        {/* Dynamic Filter Tabs */}
         <div className="px-6 border-b border-slate-100 flex items-center gap-6 overflow-x-auto text-xs font-semibold">
           <button
             type="button"
@@ -218,8 +251,8 @@ export default function StudiosView() {
             }`}
           >
             <span>All studios</span>
-            <span className={`px-1.5 py-0.5 rounded-full text-[11px] ${filterTab === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'}`}>
-              6
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'}`}>
+              {allCount}
             </span>
           </button>
 
@@ -233,8 +266,8 @@ export default function StudiosView() {
             }`}
           >
             <span>Awaiting review</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              2
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'awaiting' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+              {awaitingCount}
             </span>
           </button>
 
@@ -248,8 +281,8 @@ export default function StudiosView() {
             }`}
           >
             <span>Approved</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              4
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+              {approvedCount}
             </span>
           </button>
 
@@ -263,101 +296,128 @@ export default function StudiosView() {
             }`}
           >
             <span>Paused / declined</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-600">
-              0
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'declined' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-600'}`}>
+              {declinedCount}
             </span>
           </button>
         </div>
 
-        {/* Studios Table matching Image 12 */}
+        {/* Studios Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-6">STUDIO</th>
-                <th className="py-3 px-6">LOCATION</th>
-                <th className="py-3 px-6">REVIEW STATUS</th>
-                <th className="py-3 px-6">MEMBERSHIP</th>
-                <th className="py-3 px-6">LISTING</th>
-                <th className="py-3 px-6 text-right">MANAGE</th>
+              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400 font-semibold bg-slate-50/50">
+                <th className="py-3 px-6">Studio</th>
+                <th className="py-3 px-6">Location</th>
+                <th className="py-3 px-6">Review status</th>
+                <th className="py-3 px-6">Membership</th>
+                <th className="py-3 px-6">Listing</th>
+                <th className="py-3 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredStudios.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/60 transition">
-                  {/* Studio name & owner */}
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg ${s.avatarBg} font-bold text-xs flex items-center justify-center shrink-0`}>
-                        {s.initials}
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-900 block text-xs sm:text-[13px]">
-                          {s.name}
-                        </span>
-                        <span className="text-[11.5px] text-slate-400 block mt-0.5">
-                          {s.owner}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Location */}
-                  <td className="py-4 px-6 text-slate-700">
-                    <span className="block font-medium">{s.city}</span>
-                    <span className="text-[11px] text-slate-400 block">{s.zip}</span>
-                  </td>
-
-                  {/* Review Status */}
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.reviewColor}`}>
-                      {s.reviewStatus}
-                    </span>
-                  </td>
-
-                  {/* Membership */}
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.membershipColor}`}>
-                      {s.membership}
-                    </span>
-                  </td>
-
-                  {/* Listing */}
-                  <td className="py-4 px-6 font-semibold">
-                    <span className={s.listingColor}>
-                      {s.listing}
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-4 px-6 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setActiveReviewStudio(s)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-800 transition cursor-pointer text-xs"
-                      >
-                        {s.action}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveReviewStudio(s)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                        title="View details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+            <tbody className="divide-y divide-slate-100">
+              {filteredStudios.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-14 text-center">
+                    <div className="max-w-sm mx-auto space-y-2">
+                      <p className="text-slate-700 font-semibold text-sm">
+                        {allCount === 0 
+                          ? 'No studios registered yet' 
+                          : `No studios found in "${filterTab === 'all' ? 'All studios' : filterTab === 'awaiting' ? 'Awaiting review' : filterTab === 'approved' ? 'Approved' : 'Paused / declined'}"`}
+                      </p>
+                      <p className="text-slate-400 text-xs leading-relaxed">
+                        {allCount === 0
+                          ? 'When a tailor or business submits a registration on the customer site, it will show up here under "Awaiting review" for your approval.'
+                          : 'Try selecting another tab or clearing your search query.'}
+                      </p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredStudios.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50/60 transition group">
+                    {/* Studio Name + Owner */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        {s.image ? (
+                          <img
+                            src={s.image}
+                            alt={s.name}
+                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${s.avatarBg}`}>
+                            {s.initials}
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-bold text-slate-900 block group-hover:text-blue-600 transition">
+                            {s.name}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block">
+                            {s.owner}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Location */}
+                    <td className="py-4 px-6 text-slate-700">
+                      <span className="block font-medium">{s.city}</span>
+                      <span className="text-[11px] text-slate-400 block">{s.zip}</span>
+                    </td>
+
+                    {/* Review Status */}
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.reviewColor}`}>
+                        {s.reviewStatus}
+                      </span>
+                    </td>
+
+                    {/* Membership */}
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.membershipColor}`}>
+                        {s.membership}
+                      </span>
+                    </td>
+
+                    {/* Listing */}
+                    <td className="py-4 px-6 font-semibold">
+                      <span className={s.listingColor}>
+                        {s.listing}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-4 px-6 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setActiveReviewStudio(s)}
+                          className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-800 transition cursor-pointer text-xs"
+                        >
+                          {s.action}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveReviewStudio(s)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                          title="View details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Card Footer matching Image 12 */}
+        {/* Card Footer */}
         <div className="p-4 sm:px-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span>{filteredStudios.length} of {studiosData.length} studios</span>
+          <span>{filteredStudios.length} of {allCount} studios</span>
           <div className="flex items-center gap-1.5 text-slate-600 font-medium">
             <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
             <span>Approval + membership + territory</span>
@@ -366,70 +426,326 @@ export default function StudiosView() {
 
       </div>
 
-      {/* Modal to Register a studio */}
+      {/* Modal to Register a studio from Admin with full details */}
       {registerModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">
-              Register a new studio
-            </h3>
-            <p className="text-xs text-slate-500">
-              Enter business and owner details to start onboarding.
-            </p>
-            <div className="space-y-3 pt-2">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form
+            onSubmit={handleAdminRegisterSubmit}
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-4 my-8 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1">Studio name</label>
-                <input type="text" placeholder="e.g. Austin Tailor Studio" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                <h3 className="text-lg font-bold text-slate-900">
+                  Register a new alteration studio
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Enter complete business, owner, location, and service details.
+                </p>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1">Owner full name</label>
-                <input type="text" placeholder="e.g. Jane Doe" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1">Location / ZIP</label>
-                <input type="text" placeholder="e.g. Austin, TX 78701" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-4">
               <button
                 type="button"
                 onClick={() => setRegisterModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"
+                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 pt-1">
+              {/* Studio & Owner Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Studio name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newStudioForm.studioName}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, studioName: e.target.value })}
+                    placeholder="e.g. Austin Tailor Studio"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Owner full name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newStudioForm.ownerName}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, ownerName: e.target.value })}
+                    placeholder="e.g. Rachel Adams"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Email & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    value={newStudioForm.email}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, email: e.target.value })}
+                    placeholder="contact@austinstudio.com"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Phone number
+                  </label>
+                  <input
+                    type="tel"
+                    value={newStudioForm.phone}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, phone: e.target.value })}
+                    placeholder="+1 (512) 555-0199"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Street Address */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 block mb-1">
+                  Street address
+                </label>
+                <input
+                  type="text"
+                  value={newStudioForm.address}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, address: e.target.value })}
+                  placeholder="e.g. 1024 Congress Avenue, Suite 300"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              {/* City, State, ZIP */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.city}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, city: e.target.value })}
+                    placeholder="e.g. Austin"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.state}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, state: e.target.value })}
+                    placeholder="e.g. TX"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Postal / ZIP code
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.zip}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, zip: e.target.value })}
+                    placeholder="e.g. 78701"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Specialties */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                  Specialties (select all that apply)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSpecialties.map((spec) => {
+                    const isSelected = newStudioForm.specialties.includes(spec);
+                    return (
+                      <button
+                        key={spec}
+                        type="button"
+                        onClick={() => handleToggleSpecialty(spec)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {spec}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Pricing, Turnaround, Hours */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Starting price
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.startingPrice}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, startingPrice: e.target.value })}
+                    placeholder="$25"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Turnaround time
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.turnaround}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, turnaround: e.target.value })}
+                    placeholder="2–3 days"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    Operating hours
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudioForm.hours}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, hours: e.target.value })}
+                    placeholder="Mon–Sat 9:30 AM – 7:30 PM"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload / Preview */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 block mb-1.5">
+                  Studio storefront image
+                </label>
+                <div className="flex items-center gap-3">
+                  {newStudioForm.image ? (
+                    <div className="relative w-20 h-14 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                      <img src={newStudioForm.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setNewStudioForm({ ...newStudioForm, image: '' })}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 hover:bg-black"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-14 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload image file</span>
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    </label>
+                    <input
+                      type="text"
+                      value={newStudioForm.image.startsWith('data:') ? '' : newStudioForm.image}
+                      onChange={(e) => setNewStudioForm({ ...newStudioForm, image: e.target.value })}
+                      placeholder="Or enter image URL..."
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio / Description */}
+              <div>
+                <label className="text-xs font-semibold text-slate-800 block mb-1">
+                  About the studio / biography
+                </label>
+                <textarea
+                  rows={3}
+                  value={newStudioForm.bio}
+                  onChange={(e) => setNewStudioForm({ ...newStudioForm, bio: e.target.value })}
+                  placeholder="Tell clients about your master tailoring craftsmanship, bespoke fittings, and alteration guarantees..."
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setRegisterModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                type="button"
-                onClick={() => {
-                  alert("Studio registration invitation dispatched.");
-                  setRegisterModalOpen(false);
-                }}
-                className="px-4 py-2 text-xs font-semibold bg-[#2361E9] text-white rounded-lg hover:bg-blue-700"
+                type="submit"
+                disabled={isRegistering}
+                className="px-5 py-2 text-xs font-semibold bg-[#2361E9] hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 cursor-pointer shadow-xs"
               >
-                Submit registration
+                {isRegistering ? 'Registering...' : 'Register studio'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
-      {/* Studio Review Modal matching Images 20 & 21 */}
+      {/* Studio Review Modal connected to backend APIs */}
       {activeReviewStudio && (
         <StudioReviewModal
           studio={activeReviewStudio}
           onClose={() => setActiveReviewStudio(null)}
-          onApprove={(id) => {
-            alert("Studio approved and published to network.");
+          onApprove={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Approved');
+              fetchStudios();
+            } catch (err) {
+              console.warn('Failed to approve studio:', err);
+            }
+            setActiveReviewStudio(null);
           }}
-          onSuspend={(id) => {
-            alert("Studio listing suspended.");
+          onSuspend={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Suspended');
+              fetchStudios();
+            } catch (err) {
+              console.warn('Failed to suspend studio:', err);
+            }
+            setActiveReviewStudio(null);
           }}
-          onGrantWaiver={(id) => {
-            alert("Pilot waiver granted.");
+          onGrantWaiver={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Approved');
+              fetchStudios();
+            } catch (err) {
+              console.warn('Failed to grant waiver:', err);
+            }
+            setActiveReviewStudio(null);
+          }}
+          onSaveDetails={async (id, updates) => {
+            try {
+              await adminDataService.updateStudio(id, updates);
+              fetchStudios();
+            } catch (err) {
+              console.warn('Failed to update studio details:', err);
+            }
           }}
         />
       )}
     </div>
   );
 }
-

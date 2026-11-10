@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Loader2, AlertCircle } from 'lucide-react';
+import { adminDataService } from '../../services/adminDataService';
 
 export default function NetworkSettingsView() {
   const [membershipFee, setMembershipFee] = useState('200');
@@ -7,11 +8,53 @@ export default function NetworkSettingsView() {
   const [studioSpacing, setStudioSpacing] = useState('5');
   const [supportEmail, setSupportEmail] = useState('support@alterationconnect.example');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    let mounted = true;
+    async function loadSettings() {
+      try {
+        const settings = await adminDataService.getSettings();
+        if (mounted && settings) {
+          if (settings.membershipFee !== undefined) setMembershipFee(String(settings.membershipFee));
+          if (settings.discoveryRadius !== undefined) setDiscoveryRadius(String(settings.discoveryRadius));
+          if (settings.studioSpacing !== undefined) setStudioSpacing(String(settings.studioSpacing));
+          if (settings.supportEmail !== undefined) setSupportEmail(String(settings.supportEmail));
+        }
+      } catch (err) {
+        console.warn('Failed to load network settings:', err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    loadSettings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setIsSaving(true);
+    setSaveError('');
+    try {
+      const updated = await adminDataService.updateSettings({
+        membershipFee: String(membershipFee),
+        discoveryRadius: String(discoveryRadius),
+        studioSpacing: String(studioSpacing),
+        supportEmail: String(supportEmail)
+      });
+      window.dispatchEvent(new CustomEvent('admin_settings_updated', { detail: updated }));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      setSaveError(err.message || 'Failed to save network settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -27,9 +70,16 @@ export default function NetworkSettingsView() {
       </div>
 
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center gap-2 animate-in fade-in duration-200">
           <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
-          <span>Network settings saved successfully.</span>
+          <span>Network settings saved successfully to database.</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 stroke-[2.5]" />
+          <span>{saveError}</span>
         </div>
       )}
 
@@ -48,7 +98,8 @@ export default function NetworkSettingsView() {
               value={membershipFee}
               onChange={(e) => setMembershipFee(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900"
+              disabled={isLoading || isSaving}
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900 disabled:bg-slate-50"
             />
           </div>
 
@@ -62,7 +113,8 @@ export default function NetworkSettingsView() {
               value={discoveryRadius}
               onChange={(e) => setDiscoveryRadius(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900"
+              disabled={isLoading || isSaving}
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900 disabled:bg-slate-50"
             />
           </div>
 
@@ -76,7 +128,8 @@ export default function NetworkSettingsView() {
               value={studioSpacing}
               onChange={(e) => setStudioSpacing(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900"
+              disabled={isLoading || isSaving}
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900 disabled:bg-slate-50"
             />
           </div>
 
@@ -90,7 +143,8 @@ export default function NetworkSettingsView() {
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900"
+              disabled={isLoading || isSaving}
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition shadow-2xs text-slate-900 disabled:bg-slate-50"
             />
           </div>
         </div>
@@ -104,10 +158,20 @@ export default function NetworkSettingsView() {
         <div className="pt-2 flex justify-end">
           <button
             type="submit"
-            className="px-5 py-2.5 bg-[#2361E9] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+            disabled={isLoading || isSaving}
+            className="px-5 py-2.5 bg-[#2361E9] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>Save network settings</span>
-            <Check className="w-4 h-4 stroke-[2.2]" />
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 stroke-[2.2] animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <span>Save network settings</span>
+                <Check className="w-4 h-4 stroke-[2.2]" />
+              </>
+            )}
           </button>
         </div>
       </form>

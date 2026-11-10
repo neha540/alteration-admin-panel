@@ -41,9 +41,23 @@ export default function OrderRequestDetailsModal({
         </div>
 
         {/* Content Body matching Image 27 */}
-        <div className="p-6 sm:p-7 space-y-6">
+        <div className="p-6 sm:p-7 space-y-5">
+          {/* Customer Uploaded Photo */}
+          {currentOrder.photo && (
+            <div className="rounded-2xl overflow-hidden border border-slate-200 aspect-[16/9] w-full bg-slate-50 relative">
+              <img 
+                src={currentOrder.photo} 
+                alt="Garment" 
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-medium">
+                Customer garment photo
+              </span>
+            </div>
+          )}
+
           {/* Request Notes */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
               {currentOrder.requestNote || 'Keep the original hem on my straight-leg jeans.'}
             </p>

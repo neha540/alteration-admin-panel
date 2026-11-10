@@ -1,90 +1,137 @@
 import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
-import { Search, Users, Heart, CheckCircle2 } from 'lucide-react';
+import { Search, Users, Heart, CheckCircle2, RefreshCw } from 'lucide-react';
 import CustomerDetailsModal from './CustomerDetailsModal';
+import OrderDetailModal from './OrderDetailModal';
+import StudioReviewModal from './StudioReviewModal';
 
 export default function CustomersView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedOrderToView, setSelectedOrderToView] = useState(null);
+  const [activeReviewStudio, setActiveReviewStudio] = useState(null);
   const [liveCustomers, setLiveCustomers] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const handleReviewStudioFromOrder = async (order) => {
+    const studioName = order?.studio || order?.studioName || '';
+    const studioId = order?.studioId || '';
+
+    let target = null;
+    try {
+      const studios = await adminDataService.getStudios();
+      if (Array.isArray(studios)) {
+        target = studios.find(s => 
+          (studioId && s.id === studioId) || 
+          (studioName && s.name && s.name.toLowerCase() === studioName.toLowerCase())
+        );
+      }
+    } catch (err) {
+      console.warn('Failed to fetch studio for review:', err);
+    }
+
+    if (!target) {
+      target = {
+        id: studioId || 'std_' + Date.now(),
+        name: studioName || 'Specialist Tailoring Studio',
+        owner: 'Studio Owner',
+        city: 'Austin',
+        zip: '78701',
+        status: 'Approved',
+        reviewStatus: 'Approved',
+        startingPrice: '$25',
+        turnaround: '2–3 days',
+        hours: 'Mon–Sat 9:30 AM – 7:30 PM',
+        specialties: ['Everyday'],
+        bio: 'A neighborhood alteration and tailoring studio.'
+      };
+    }
+
+    setSelectedOrderToView(null);
+    setActiveReviewStudio(target);
+  };
+
+
+
+  const fetchCustomers = () => {
     adminDataService.getCustomers().then(data => {
-      if (data && data.length > 0) {
+      if (Array.isArray(data)) {
         setLiveCustomers(data);
       }
-    }).catch(() => {});
+    }).catch(err => {
+      console.warn('Failed to load customers:', err);
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+    const interval = setInterval(fetchCustomers, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  const customersData = [
-    {
-      id: 1,
-      name: 'Alexandra Morgan',
-      email: 'alexandra@example.com',
-      initials: 'AM',
-      avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
-      orders: 3,
-      studiosVisited: 2,
-      paidValue: '$132',
-      activeOrders: 2
-    },
-    {
-      id: 2,
-      name: 'Jordan Kim',
-      email: 'jordan@example.com',
-      initials: 'JK',
-      avatarBg: 'bg-slate-100 text-slate-700',
-      orders: 1,
-      studiosVisited: 1,
-      paidValue: '$0',
-      activeOrders: 1
-    },
-    {
-      id: 3,
-      name: 'Casey Wilson',
-      email: 'casey@example.com',
-      initials: 'CW',
-      avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
-      orders: 1,
-      studiosVisited: 1,
-      paidValue: '$85',
-      activeOrders: 1
-    }
-  ];
-
-  const currentCustomers = liveCustomers ? liveCustomers.map(u => ({
-    id: u.id,
-    name: u.fullName || u.name,
-    email: u.email,
-    initials: u.initials || 'CU',
-    avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
-    orders: u.ordersCount || 1,
-    studiosVisited: 1,
-    paidValue: u.paidValue || '$68',
-    activeOrders: 1
-  })) : customersData;
+  const currentCustomers = Array.isArray(liveCustomers)
+    ? liveCustomers.map(u => {
+      const ordersList = Array.isArray(u.orders) ? u.orders : [];
+      const count = typeof u.ordersCount === 'number' ? u.ordersCount : ordersList.length;
+      return {
+        id: u.id,
+        name: u.fullName || u.name || 'Customer',
+        email: u.email,
+        initials: u.initials || (u.name || u.fullName || 'CU').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
+        ordersCount: count,
+        studiosVisited: u.studiosVisited !== undefined ? u.studiosVisited : (count > 0 ? 1 : 0),
+        paidValue: u.paidValue || '$0',
+        activeOrders: u.activeOrders !== undefined ? u.activeOrders : Math.max(0, count - (u.completedCount || 0)),
+        completedCount: u.completedCount || 0,
+        measurements: u.measurements,
+        createdAt: u.createdAt,
+        customerOrders: ordersList
+      };
+    })
+    : [];
 
   const filteredCustomers = currentCustomers.filter((c) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+      return (
+        (c.name && c.name.toLowerCase().includes(q)) ||
+        (c.email && c.email.toLowerCase().includes(q))
+      );
     }
     return true;
   });
 
+  // Calculate dynamic metrics
+  const totalCustomers = currentCustomers.length;
+  const repeatCustomers = currentCustomers.filter(c => c.ordersCount >= 2).length;
+  const completedOrdersCount = currentCustomers.reduce((sum, c) => sum + (c.completedCount || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
-          Customers
-        </h1>
-        <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
-          Open a customer to see their order history.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
+            Customers
+          </h1>
+          <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
+            Open a customer to see their order history, saved measurements, and studio interactions.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchCustomers}
+          className="self-start sm:self-auto px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      {/* Top 3 Metric Cards matching Image 16 */}
+      {/* Top 3 Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -93,8 +140,8 @@ export default function CustomersView() {
               <Users className="w-4 h-4 stroke-[2]" />
             </div>
           </div>
-          <span className="text-3xl font-bold text-slate-900 block mt-2">3</span>
-          <span className="text-[11.5px] text-slate-400 block mt-1">Customers represented in this preview</span>
+          <span className="text-3xl font-bold text-slate-900 block mt-2">{totalCustomers}</span>
+          <span className="text-[11.5px] text-slate-400 block mt-1">Live customer accounts in platform</span>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
@@ -104,7 +151,7 @@ export default function CustomersView() {
               <Heart className="w-4 h-4 stroke-[2]" />
             </div>
           </div>
-          <span className="text-3xl font-bold text-slate-900 block mt-2">1</span>
+          <span className="text-3xl font-bold text-slate-900 block mt-2">{repeatCustomers}</span>
           <span className="text-[11.5px] text-slate-400 block mt-1">Two or more customer orders</span>
         </div>
 
@@ -115,12 +162,12 @@ export default function CustomersView() {
               <CheckCircle2 className="w-4 h-4 stroke-[2]" />
             </div>
           </div>
-          <span className="text-3xl font-bold text-slate-900 block mt-2">1</span>
+          <span className="text-3xl font-bold text-slate-900 block mt-2">{completedOrdersCount}</span>
           <span className="text-[11.5px] text-slate-400 block mt-1">Across every studio</span>
         </div>
       </div>
 
-      {/* Customer Directory Table Card matching Image 16 */}
+      {/* Customer Directory Table Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden">
         {/* Card Header & Search */}
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -145,87 +192,153 @@ export default function CustomersView() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="py-3.5 px-6">CUSTOMER</th>
-                <th className="py-3.5 px-6">ORDERS</th>
-                <th className="py-3.5 px-6">STUDIOS VISITED</th>
-                <th className="py-3.5 px-6">PAID ORDER VALUE</th>
-                <th className="py-3.5 px-6">ACTIVE ORDERS</th>
-                <th className="py-3.5 px-6 text-right">DETAILS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredCustomers.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/60 transition">
-                  {/* Customer */}
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full ${c.avatarBg} font-bold text-xs flex items-center justify-center shrink-0`}>
-                        {c.initials}
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-900 block text-xs sm:text-[13px]">
-                          {c.name}
-                        </span>
-                        <span className="text-[11.5px] text-slate-400 block mt-0.5">
-                          {c.email}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Orders */}
-                  <td className="py-4 px-6 font-semibold text-slate-800">
-                    {c.orders}
-                  </td>
-
-                  {/* Studios Visited */}
-                  <td className="py-4 px-6 font-semibold text-slate-800">
-                    {c.studiosVisited}
-                  </td>
-
-                  {/* Paid Order Value */}
-                  <td className="py-4 px-6 font-semibold text-slate-900">
-                    {c.paidValue}
-                  </td>
-
-                  {/* Active Orders */}
-                  <td className="py-4 px-6 font-semibold text-slate-800">
-                    {c.activeOrders}
-                  </td>
-
-                  {/* Details Button */}
-                  <td className="py-4 px-6 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCustomer(c)}
-                      className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-800 transition cursor-pointer text-xs"
-                    >
-                      View customer
-                    </button>
-                  </td>
+        {/* Table or Empty State */}
+        {filteredCustomers.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-center text-slate-400 mb-3 mx-auto">
+              <Users className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900">No customers found</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              {searchQuery ? 'Try clearing your search query.' : 'New registered customer accounts will appear here.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="py-3.5 px-6">CUSTOMER</th>
+                  <th className="py-3.5 px-6">ORDERS</th>
+                  <th className="py-3.5 px-6">STUDIOS VISITED</th>
+                  <th className="py-3.5 px-6">PAID ORDER VALUE</th>
+                  <th className="py-3.5 px-6">ACTIVE ORDERS</th>
+                  <th className="py-3.5 px-6 text-right">DETAILS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredCustomers.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50/60 transition">
+                    {/* Customer */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full ${c.avatarBg} font-bold text-xs flex items-center justify-center shrink-0`}>
+                          {c.initials}
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-900 block text-xs sm:text-[13px]">
+                            {c.name}
+                          </span>
+                          <span className="text-[11.5px] text-slate-400 block mt-0.5">
+                            {c.email}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Orders */}
+                    <td className="py-4 px-6 font-semibold text-slate-800">
+                      {c.ordersCount}
+                    </td>
+
+                    {/* Studios Visited */}
+                    <td className="py-4 px-6 font-semibold text-slate-800">
+                      {c.studiosVisited}
+                    </td>
+
+                    {/* Paid Order Value */}
+                    <td className="py-4 px-6 font-semibold text-slate-900">
+                      {c.paidValue}
+                    </td>
+
+                    {/* Active Orders */}
+                    <td className="py-4 px-6 font-semibold text-slate-800">
+                      {c.activeOrders}
+                    </td>
+
+                    {/* Details Button */}
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCustomer(c)}
+                        className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-800 transition cursor-pointer text-xs shadow-2xs"
+                      >
+                        View customer
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Customer Account Details Modal matching Image 24 */}
+      {/* Customer Account Details Modal */}
       {selectedCustomer && (
         <CustomerDetailsModal
           customer={selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
           onViewOrder={(order) => {
-            setSelectedCustomer(null);
+            setSelectedOrderToView({
+              ...order,
+              customer: selectedCustomer.name,
+              customerName: selectedCustomer.name,
+              customerEmail: selectedCustomer.email,
+              customerPhone: selectedCustomer.phone || (order && order.customerPhone) || ''
+            });
+          }}
+        />
+      )}
+
+      {/* Cross-studio Order Detail Modal opened from Customer Orders */}
+      {selectedOrderToView && (
+        <OrderDetailModal
+          order={selectedOrderToView}
+          onClose={() => setSelectedOrderToView(null)}
+          onReviewStudio={handleReviewStudioFromOrder}
+        />
+      )}
+
+      {/* Studio Review Modal opened from Order View / Review Studio */}
+      {activeReviewStudio && (
+        <StudioReviewModal
+          studio={activeReviewStudio}
+          onClose={() => setActiveReviewStudio(null)}
+          onApprove={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Approved');
+            } catch (err) {
+              console.warn('Failed to approve studio:', err);
+            }
+            setActiveReviewStudio(null);
+          }}
+          onSuspend={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Suspended');
+            } catch (err) {
+              console.warn('Failed to suspend studio:', err);
+            }
+            setActiveReviewStudio(null);
+          }}
+          onGrantWaiver={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Approved');
+            } catch (err) {
+              console.warn('Failed to grant waiver:', err);
+            }
+            setActiveReviewStudio(null);
+          }}
+          onSaveDetails={async (id, updates) => {
+            try {
+              await adminDataService.updateStudio(id, updates);
+            } catch (err) {
+              console.warn('Failed to update studio details:', err);
+            }
+            setActiveReviewStudio(null);
           }}
         />
       )}
     </div>
   );
 }
-

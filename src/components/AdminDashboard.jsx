@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminDataService } from '../services/adminDataService';
 import { 
   LayoutGrid, 
   Building2, 
@@ -42,10 +43,66 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
   const [activeNav, setActiveNav] = useState(initialTab);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(initialModal);
+  const [awaitingCount, setAwaitingCount] = useState(0);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [networkSettings, setNetworkSettings] = useState({
+    membershipFee: '200',
+    studioSpacing: '5',
+    supportEmail: 'support@alterationconnect.example'
+  });
+
+  const fetchAwaitingCount = () => {
+    adminDataService.getStudios().then(studios => {
+      if (Array.isArray(studios)) {
+        const count = studios.filter(s => s.status === 'In review' || s.reviewStatus === 'In review').length;
+        setAwaitingCount(count);
+      }
+    }).catch(() => {});
+  };
+
+  const fetchSettings = () => {
+    adminDataService.getSettings().then(s => {
+      if (s) {
+        setNetworkSettings({
+          membershipFee: String(s.membershipFee || '200'),
+          studioSpacing: String(s.studioSpacing || '5'),
+          supportEmail: s.supportEmail || 'support@alterationconnect.example'
+        });
+      }
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchAwaitingCount();
+    fetchSettings();
+    const interval = setInterval(() => {
+      fetchAwaitingCount();
+      fetchSettings();
+    }, 3000);
+    const handleStudiosUpdate = () => fetchAwaitingCount();
+    const handleSettingsUpdate = (e) => {
+      if (e?.detail) {
+        setNetworkSettings({
+          membershipFee: String(e.detail.membershipFee || '200'),
+          studioSpacing: String(e.detail.studioSpacing || '5'),
+          supportEmail: e.detail.supportEmail || 'support@alterationconnect.example'
+        });
+      } else {
+        fetchSettings();
+      }
+    };
+    window.addEventListener('admin_studios_updated', handleStudiosUpdate);
+    window.addEventListener('admin_settings_updated', handleSettingsUpdate);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('admin_studios_updated', handleStudiosUpdate);
+      window.removeEventListener('admin_settings_updated', handleSettingsUpdate);
+    };
+  }, []);
 
   const navItems = [
     { key: 'overview', label: 'Overview', icon: LayoutGrid, breadcrumb: 'Overview' },
-    { key: 'studios', label: 'Studios', icon: Building2, badge: '2', breadcrumb: 'Studios' },
+    { key: 'studios', label: 'Studios', icon: Building2, badge: awaitingCount > 0 ? String(awaitingCount) : null, breadcrumb: 'Studios' },
     { key: 'orders', label: 'All orders', icon: FileText, breadcrumb: 'All orders' },
     { key: 'territories', label: 'Territories', icon: Map, breadcrumb: 'Territories' },
     { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard, breadcrumb: 'Subscriptions' },
@@ -112,7 +169,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
                     <Icon className="w-4 h-4 stroke-[2]" />
                     <span>{item.label}</span>
                   </div>
-                  {item.badge && (
+                  {Boolean(item.badge) && item.badge !== '0' && (
                     <span className="bg-white text-slate-900 font-bold text-[11px] px-2 py-0.5 rounded-full">
                       {item.badge}
                     </span>
@@ -132,8 +189,8 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
               <span>Thoughtfully local</span>
             </div>
             <div className="text-[11.5px] text-slate-300 mt-1.5 space-y-0.5 font-normal">
-              <p>5-mile studio spacing</p>
-              <p>$200 monthly membership</p>
+              <p>{networkSettings.studioSpacing}-mile studio spacing</p>
+              <p>${networkSettings.membershipFee} monthly membership</p>
             </div>
           </div>
 
@@ -141,7 +198,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
           <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
             <button
               type="button"
-              onClick={() => alert("Partner support: support@alterationconnect.com")}
+              onClick={() => alert(`Partner support: ${networkSettings.supportEmail}`)}
               className="inline-flex items-center gap-1.5 hover:text-white transition cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
@@ -151,7 +208,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
 
             <button
               type="button"
-              onClick={onSignOut}
+              onClick={() => setShowLogoutModal(true)}
               title="Sign out"
               className="hover:text-red-400 transition cursor-pointer p-1"
             >
@@ -378,6 +435,44 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
               setActiveNav('activity');
             }}
           />
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <LogOut className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Are you sure you want to log out?
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                You will need to sign in again to access the platform admin console.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  onSignOut();
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs"
+              >
+                Log out
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

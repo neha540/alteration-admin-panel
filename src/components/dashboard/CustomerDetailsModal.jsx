@@ -7,38 +7,16 @@ export default function CustomerDetailsModal({
   onViewOrder 
 }) {
   const currentCustomer = customer || {
-    name: 'Alexandra Morgan',
-    email: 'alexandra@example.com',
-    initials: 'AM',
+    name: 'Customer',
+    email: 'customer@example.com',
+    initials: 'CU',
     avatarBg: 'bg-[#F5EFE6] text-[#78593C]',
-    ordersCount: 3,
-    paidValue: '$132',
-    completedCount: 1
+    ordersCount: 0,
+    paidValue: '$0',
+    completedCount: 0
   };
 
-  const customerOrders = [
-    {
-      id: 'AC-1042',
-      title: 'Trouser hem & waist adjustment',
-      studio: 'The Modern Hem',
-      status: 'Quote sent',
-      statusColor: 'bg-blue-50 text-blue-700 border-blue-200/80'
-    },
-    {
-      id: 'AC-1041',
-      title: 'Denim hemming',
-      studio: 'The Modern Hem',
-      status: 'In progress',
-      statusColor: 'bg-blue-50 text-blue-700 border-blue-200/80'
-    },
-    {
-      id: 'AC-1038',
-      title: 'Silk dress adjustment',
-      studio: 'Atelier Rose',
-      status: 'Completed',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-    }
-  ];
+  const customerOrders = currentCustomer.customerOrders || currentCustomer.orders || [];
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto select-none font-['Arial',sans-serif]">
@@ -127,37 +105,43 @@ export default function CustomerDetailsModal({
               Customer orders
             </h4>
 
-            <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-2xl bg-white overflow-hidden shadow-2xs">
-              {customerOrders.map((order) => (
-                <div key={order.id} className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition">
-                  <div>
-                    <span className="font-bold text-xs sm:text-[13px] text-slate-900 block">
-                      {order.title}
-                    </span>
-                    <span className="text-[11.5px] text-slate-400 block mt-0.5">
-                      {order.studio} · {order.id}
-                    </span>
-                  </div>
+            {customerOrders.length === 0 ? (
+              <div className="p-8 border border-slate-200/80 rounded-2xl bg-slate-50 text-center text-xs text-slate-500">
+                No orders placed by this customer yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-2xl bg-white overflow-hidden shadow-2xs">
+                {customerOrders.map((order) => (
+                  <div key={order.id} className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition">
+                    <div>
+                      <span className="font-bold text-xs sm:text-[13px] text-slate-900 block">
+                        {order.title}
+                      </span>
+                      <span className="text-[11.5px] text-slate-400 block mt-0.5">
+                        {order.studio} · {order.id} · {order.amount || ''}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${order.statusColor}`}>
-                      {order.status}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${order.statusColor}`}>
+                        {order.status}
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        if (onViewOrder) onViewOrder(order);
-                      }}
-                      className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-semibold transition cursor-pointer"
-                    >
-                      View
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          if (onViewOrder) onViewOrder(order);
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-semibold transition cursor-pointer"
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
