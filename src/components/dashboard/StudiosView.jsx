@@ -7,6 +7,8 @@ export default function StudiosView() {
   const [filterTab, setFilterTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [registerError, setRegisterError] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
   const [liveStudios, setLiveStudios] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -75,14 +77,22 @@ export default function StudiosView() {
   // Handle Admin registration directly to backend
   const handleAdminRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!newStudioForm.studioName.trim()) return;
+    setRegisterError('');
+    if (!newStudioForm.studioName.trim()) {
+      setRegisterError('Studio name is required.');
+      return;
+    }
+    if (!newStudioForm.image || !newStudioForm.image.trim()) {
+      setRegisterError('Studio storefront or workspace photo is required. Please upload an image or provide an image URL.');
+      return;
+    }
     setIsRegistering(true);
     try {
       const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
       const apiBase = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
       
       const cityState = [newStudioForm.city.trim(), newStudioForm.state.trim()].filter(Boolean).join(', ');
-      await fetch(`${apiBase}/studios/register`, {
+      const res = await fetch(`${apiBase}/studios/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,11 +108,18 @@ export default function StudiosView() {
           startingPrice: newStudioForm.startingPrice.trim() || '$25',
           turnaround: newStudioForm.turnaround.trim() || '2–3 days',
           hours: newStudioForm.hours.trim() || 'Mon–Sat 9:30 AM – 7:30 PM',
-          image: newStudioForm.image || '',
+          image: newStudioForm.image.trim(),
           bio: newStudioForm.bio.trim() || ''
         })
       });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data.message || 'Failed to register studio. Please check details.');
+        return;
+      }
       setRegisterModalOpen(false);
+      setToastMessage(`Studio "${newStudioForm.studioName.trim()}" registered successfully!`);
+      setTimeout(() => setToastMessage(''), 5000);
       setNewStudioForm({
         studioName: '',
         ownerName: '',
@@ -122,6 +139,7 @@ export default function StudiosView() {
       fetchStudios();
     } catch (err) {
       console.warn('Error registering studio:', err);
+      setRegisterError(err.message || 'Failed to register studio.');
     } finally {
       setIsRegistering(false);
     }
@@ -205,7 +223,10 @@ export default function StudiosView() {
 
         <button
           type="button"
-          onClick={() => setRegisterModalOpen(true)}
+          onClick={() => {
+            setRegisterError('');
+            setRegisterModalOpen(true);
+          }}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 stroke-[2.2]" />
@@ -452,6 +473,12 @@ export default function StudiosView() {
             </div>
 
             <div className="space-y-4 pt-1">
+              {registerError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3.5 py-2.5 rounded-lg text-xs font-medium">
+                  {registerError}
+                </div>
+              )}
+
               {/* Studio & Owner Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
@@ -633,7 +660,7 @@ export default function StudiosView() {
               {/* Image Upload / Preview */}
               <div>
                 <label className="text-xs font-semibold text-slate-800 block mb-1.5">
-                  Studio storefront image
+                  Studio storefront image <span className="text-rose-500 font-bold">* (Required)</span>
                 </label>
                 <div className="flex items-center gap-3">
                   {newStudioForm.image ? (
@@ -648,7 +675,7 @@ export default function StudiosView() {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-20 h-14 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
+                    <div className={`w-20 h-14 rounded-lg bg-slate-50 border border-dashed ${registerError && !newStudioForm.image ? 'border-rose-400 bg-rose-50/40 text-rose-500' : 'border-slate-300 text-slate-400'} flex items-center justify-center shrink-0`}>
                       <ImageIcon className="w-5 h-5" />
                     </div>
                   )}
@@ -656,12 +683,23 @@ export default function StudiosView() {
                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition cursor-pointer">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload image file</span>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          setRegisterError('');
+                          handleImageUpload(e);
+                        }} 
+                        className="hidden" 
+                      />
                     </label>
                     <input
                       type="text"
                       value={newStudioForm.image.startsWith('data:') ? '' : newStudioForm.image}
-                      onChange={(e) => setNewStudioForm({ ...newStudioForm, image: e.target.value })}
+                      onChange={(e) => {
+                        setRegisterError('');
+                        setNewStudioForm({ ...newStudioForm, image: e.target.value });
+                      }}
                       placeholder="Or enter image URL..."
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-600"
                     />
@@ -713,6 +751,10 @@ export default function StudiosView() {
             try {
               await adminDataService.updateStudioStatus(id, 'Approved');
               fetchStudios();
+              const stName = activeReviewStudio.name || 'Studio';
+              const stEmail = activeReviewStudio.email || 'studio email';
+              setToastMessage(`Studio "${stName}" approved! Login credentials and live portal link (https://altration-panel.alteration-connect.workers.dev) have been dispatched to ${stEmail}.`);
+              setTimeout(() => setToastMessage(''), 7000);
             } catch (err) {
               console.warn('Failed to approve studio:', err);
             }
@@ -745,6 +787,21 @@ export default function StudiosView() {
             }
           }}
         />
+      )}
+
+      {/* Floating Status Notification Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border border-slate-700">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="flex-1 leading-snug">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage('')}
+            className="text-slate-400 hover:text-white ml-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );
