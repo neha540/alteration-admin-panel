@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   Search, 
   MapPin, 
@@ -12,19 +12,37 @@ import {
   Check
 } from 'lucide-react';
 
+import { adminDataService } from '../../services/adminDataService';
+
 export default function TerritoriesView() {
   const [zipInput, setZipInput] = useState('');
   const [zipResult, setZipResult] = useState(null);
   const [cityFilter, setCityFilter] = useState('all');
+  const [liveStudios, setLiveStudios] = useState([]);
 
-  const studios = [
-    { id: 1, name: 'The Modern Hem', location: 'Austin, TX 78701', status: 'Live', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', lat: 30.27, lng: -97.74 },
-    { id: 2, name: 'Northline Tailoring', location: 'North Austin, TX 78758', status: 'Live', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', lat: 30.39, lng: -97.71 },
-    { id: 3, name: 'Atelier Rose', location: 'Westlake, TX 78746', status: 'Live', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', lat: 30.29, lng: -97.80 },
-    { id: 4, name: 'Good Form Studio', location: 'South Austin, TX 78745', status: 'Live', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', lat: 30.21, lng: -97.79 },
-    { id: 5, name: 'Round Rock Stitch', location: 'Round Rock, TX 78664', status: 'Clear', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80', lat: 30.51, lng: -97.68 },
-    { id: 6, name: 'Congress Clothing Care', location: 'South Congress, TX 78704', status: 'Conflict', statusColor: 'bg-red-50 text-red-700 border-red-200/80', lat: 30.24, lng: -97.75 }
-  ];
+  useEffect(() => {
+    adminDataService.getStudios()
+      .then(data => {
+        if (Array.isArray(data)) setLiveStudios(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const studios = (liveStudios || []).map(s => {
+    const isConflict = Boolean(s.hasConflict);
+    const isLive = s.status === 'Approved';
+    return {
+      id: s.id,
+      name: s.name,
+      location: s.address || `${s.city || 'Austin'}, ${s.state || 'TX'} ${s.zip || ''}`,
+      status: isLive ? 'Live' : (isConflict ? 'Conflict' : 'In review'),
+      statusColor: isLive 
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+        : (isConflict ? 'bg-red-50 text-red-700 border-red-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80'),
+      lat: s.lat || 30.27,
+      lng: s.lng || -97.74
+    };
+  });
 
   const handleCheckZip = (e) => {
     e.preventDefault();
@@ -143,7 +161,12 @@ export default function TerritoriesView() {
 
           {/* Studios List below map */}
           <div className="divide-y divide-slate-100 pt-2">
-            {studios.map((s) => (
+            {studios.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                No studios registered in the network yet. Studio territory locations will appear here.
+              </div>
+            ) : (
+              studios.map((s) => (
               <div key={s.id} className="py-2.5 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer">
                 <div className="flex items-center gap-3">
                   <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center">
@@ -162,7 +185,7 @@ export default function TerritoriesView() {
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
 
@@ -268,4 +291,6 @@ export default function TerritoriesView() {
     </div>
   );
 }
+
+
 

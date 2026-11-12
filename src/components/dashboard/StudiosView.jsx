@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
 import { Search, Plus, Eye, Check, Upload, X, Image as ImageIcon } from 'lucide-react';
 import StudioReviewModal from './StudioReviewModal';
+import StudioApprovedScreen from './StudioApprovedScreen';
 
 export default function StudiosView() {
   const [filterTab, setFilterTab] = useState('all');
@@ -10,6 +11,7 @@ export default function StudiosView() {
   const [registerError, setRegisterError] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
+  const [approvedConfirmationData, setApprovedConfirmationData] = useState(null);
   const [liveStudios, setLiveStudios] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -790,12 +792,17 @@ export default function StudiosView() {
           onClose={() => setActiveReviewStudio(null)}
           onApprove={async (id) => {
             try {
-              await adminDataService.updateStudioStatus(id, 'Approved');
+              const res = await adminDataService.updateStudioStatus(id, 'Approved');
               fetchStudios();
-              const stName = activeReviewStudio.name || 'Studio';
-              const stEmail = activeReviewStudio.email || 'studio email';
-              setToastMessage(`Studio "${stName}" approved! Login credentials and live portal link (https://altration-panel.alteration-connect.workers.dev) have been dispatched to ${stEmail}.`);
-              setTimeout(() => setToastMessage(''), 7000);
+              setApprovedConfirmationData({
+                studio: activeReviewStudio,
+                credentials: res?.credentials || {
+                  studioId: activeReviewStudio.id,
+                  email: activeReviewStudio.email,
+                  password: activeReviewStudio.defaultPassword || 'Studio@123',
+                  portalUrl: 'https://altration-panel.alteration-connect.workers.dev'
+                }
+              });
             } catch (err) {
               console.warn('Failed to approve studio:', err);
             }
@@ -828,6 +835,21 @@ export default function StudiosView() {
             }
           }}
         />
+      )}
+
+      {/* Studio Approved Confirmation Screen with Generated Credentials */}
+      {approvedConfirmationData && (
+        <div className="fixed inset-0 z-50 bg-[#F4F6F9] overflow-y-auto">
+          <StudioApprovedScreen
+            studio={approvedConfirmationData.studio}
+            credentials={approvedConfirmationData.credentials}
+            onClose={() => setApprovedConfirmationData(null)}
+            onViewStudios={() => {
+              setApprovedConfirmationData(null);
+              fetchStudios();
+            }}
+          />
+        </div>
       )}
 
       {/* Floating Status Notification Toast */}

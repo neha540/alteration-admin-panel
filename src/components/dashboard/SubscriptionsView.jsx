@@ -1,74 +1,47 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Search, CreditCard } from 'lucide-react';
+import { adminDataService } from '../../services/adminDataService';
 import StudioMembershipModal from './StudioMembershipModal';
 
 export default function SubscriptionsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedSubStudio, setSelectedSubStudio] = useState(null);
+  const [liveStudios, setLiveStudios] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const subsData = [
-    {
-      id: 1,
-      name: 'The Modern Hem',
-      listing: 'Listing live',
-      email: 'olivia@modernhem.example',
+  const fetchStudios = () => {
+    adminDataService.getStudios()
+      .then(data => {
+        if (Array.isArray(data)) setLiveStudios(data);
+      })
+      .catch(err => console.warn('Failed to fetch studios for subscriptions:', err))
+      .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStudios();
+    const interval = setInterval(fetchStudios, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const subsData = (liveStudios || []).map(s => {
+    const isApproved = s.status === 'Approved';
+    const isPaid = s.membership === 'Paid' || (isApproved && s.membership !== 'Payment required');
+    return {
+      id: s.id,
+      name: s.name,
+      listing: isApproved ? 'Listing live' : 'Listing not live',
+      email: s.email || s.contactEmail || 'No email',
       fee: '$200',
       feePeriod: 'per month',
-      status: 'Paid',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-    },
-    {
-      id: 2,
-      name: 'Northline Tailoring',
-      listing: 'Listing live',
-      email: 'james@northline.example',
-      fee: '$200',
-      feePeriod: 'per month',
-      status: 'Paid',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-    },
-    {
-      id: 3,
-      name: 'Atelier Rose',
-      listing: 'Listing live',
-      email: 'isabella@atelierrose.example',
-      fee: '$200',
-      feePeriod: 'per month',
-      status: 'Paid',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-    },
-    {
-      id: 4,
-      name: 'Good Form Studio',
-      listing: 'Listing live',
-      email: 'avery@goodform.example',
-      fee: '$200',
-      feePeriod: 'per month',
-      status: 'Paid',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-    },
-    {
-      id: 5,
-      name: 'Round Rock Stitch',
-      listing: 'Listing not live',
-      email: 'emma@roundrockstitch.example',
-      fee: '$200',
-      feePeriod: 'per month',
-      status: 'Payment required',
-      statusColor: 'bg-amber-50 text-amber-700 border-amber-200/80'
-    },
-    {
-      id: 6,
-      name: 'Congress Clothing Care',
-      listing: 'Listing not live',
-      email: 'noah@congresscare.example',
-      fee: '$200',
-      feePeriod: 'per month',
-      status: 'Payment required',
-      statusColor: 'bg-amber-50 text-amber-700 border-amber-200/80'
-    }
-  ];
+      status: isPaid ? 'Paid' : 'Payment required',
+      statusColor: isPaid 
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+        : 'bg-amber-50 text-amber-700 border-amber-200/80',
+      rawStudio: s
+    };
+  });
 
   const filteredSubs = subsData.filter((s) => {
     if (statusFilter !== 'all' && s.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
@@ -132,80 +105,89 @@ export default function SubscriptionsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredSubs.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/60 transition">
-                  {/* Studio */}
-                  <td className="py-4 px-6">
-                    <span className="font-bold text-slate-900 block text-xs sm:text-[13px]">
-                      {s.name}
-                    </span>
-                    <span className="text-[11.5px] text-slate-400 block mt-0.5">
-                      {s.listing} · {s.email}
-                    </span>
-                  </td>
-
-                  {/* Monthly Fee */}
-                  <td className="py-4 px-6">
-                    <span className="font-bold text-slate-900">{s.fee}</span>
-                    <span className="text-[11px] text-slate-400 block mt-0.5">{s.feePeriod}</span>
-                  </td>
-
-                  {/* Membership Badge */}
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.statusColor}`}>
-                      {s.status}
-                    </span>
-                  </td>
-
-                  {/* Manage Button */}
-                  <td className="py-4 px-6 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSubStudio(s)}
-                      className="px-3.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 font-semibold text-slate-800 transition cursor-pointer text-xs"
-                    >
-                      Manage membership
-                    </button>
+              {filteredSubs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-14 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400 mb-3">
+                        <CreditCard className="w-6 h-6 stroke-[1.5]" />
+                      </div>
+                      <p className="font-semibold text-slate-700 text-sm">No studio memberships found</p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                        When studios register and join the network, their monthly membership status and fee waivers will appear here.
+                      </p>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredSubs.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50/60 transition">
+                    {/* Studio */}
+                    <td className="py-4 px-6">
+                      <span className="font-bold text-slate-900 block text-xs sm:text-[13px]">
+                        {s.name}
+                      </span>
+                      <span className="text-[11.5px] text-slate-400 block mt-0.5">
+                        {s.listing} � {s.email}
+                      </span>
+                    </td>
+
+                    {/* Monthly Fee */}
+                    <td className="py-4 px-6">
+                      <span className="font-bold text-slate-900">{s.fee}</span>
+                      <span className="text-[11px] text-slate-400 block mt-0.5">{s.feePeriod}</span>
+                    </td>
+
+                    {/* Membership Badge */}
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${s.statusColor}`}>
+                        {s.status}
+                      </span>
+                    </td>
+
+                    {/* Manage Button */}
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubStudio(s.rawStudio || s)}
+                        className="px-3.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer"
+                      >
+                        Manage membership
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        {/* Note */}
-        <div className="p-4 px-6 bg-slate-50/50 border-t border-slate-100 text-xs text-slate-500">
-          <span>6 memberships · Customer order payments are separate</span>
-        </div>
       </div>
 
-      {/* Bottom 3 Metrics matching Image 15 */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-        <div className="pb-4 md:pb-0 md:pr-6">
-          <span className="text-3xl font-bold text-slate-900 block tracking-tight">4</span>
-          <span className="text-xs text-slate-500 block mt-1.5 font-medium">Paid memberships</span>
-        </div>
-
-        <div className="py-4 md:py-0 md:px-6">
-          <span className="text-3xl font-bold text-slate-900 block tracking-tight">$800</span>
-          <span className="text-xs text-slate-500 block mt-1.5 font-medium">Monthly paid plan value</span>
-        </div>
-
-        <div className="pt-4 md:pt-0 md:pl-6">
-          <span className="text-3xl font-bold text-slate-900 block tracking-tight">0</span>
-          <span className="text-xs text-slate-500 block mt-1.5 font-medium">Approved pilot waivers</span>
-        </div>
-      </div>
-
-      {/* Studio Membership Details Modal matching Image 23 */}
+      {/* Studio Membership Modal */}
       {selectedSubStudio && (
         <StudioMembershipModal
           studio={selectedSubStudio}
           onClose={() => setSelectedSubStudio(null)}
-          onReviewStudio={() => setSelectedSubStudio(null)}
+          onGrantWaiver={async (studioId) => {
+            try {
+              await adminDataService.updateStudio(studioId, { membership: 'Paid', pilotWaiver: true });
+              fetchStudios();
+            } catch (err) {
+              console.warn('Waiver failed:', err);
+            }
+            setSelectedSubStudio(null);
+          }}
+          onMarkPaid={async (studioId) => {
+            try {
+              await adminDataService.updateStudio(studioId, { membership: 'Paid' });
+              fetchStudios();
+            } catch (err) {
+              console.warn('Mark paid failed:', err);
+            }
+            setSelectedSubStudio(null);
+          }}
         />
       )}
     </div>
   );
 }
-

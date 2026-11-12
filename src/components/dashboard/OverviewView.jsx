@@ -10,81 +10,15 @@ import {
 } from 'lucide-react';
 import { adminDataService } from '../../services/adminDataService';
 import StudioReviewModal from './StudioReviewModal';
+import StudioApprovedScreen from './StudioApprovedScreen';
 
 export default function OverviewView({ onNavigateTab }) {
-  // Default mock fallback data matching initial Figma designs
-  const initialStudios = [
-    {
-      id: 'round-rock',
-      name: 'Round Rock Stitch',
-      location: 'Round Rock, TX · 78664',
-      city: 'Round Rock',
-      state: 'TX',
-      zip: '78664',
-      status: 'In review',
-      reviewStatus: 'In review',
-      hasConflict: false,
-      membership: 'Payment required'
-    },
-    {
-      id: 'congress-clothing',
-      name: 'Congress Clothing Care',
-      location: 'South Congress, TX · 78704',
-      city: 'South Congress',
-      state: 'TX',
-      zip: '78704',
-      status: 'In review',
-      reviewStatus: 'In review',
-      hasConflict: true,
-      membership: 'Payment required'
-    },
-    {
-      id: 'modern-hem',
-      name: 'The Modern Hem',
-      city: 'Austin, TX',
-      zip: '78701',
-      status: 'Approved',
-      reviewStatus: 'Approved',
-      membership: 'Paid'
-    },
-    {
-      id: 'northline',
-      name: 'Northline Tailoring',
-      city: 'North Austin, TX',
-      zip: '78758',
-      status: 'Approved',
-      reviewStatus: 'Approved',
-      membership: 'Paid'
-    },
-    {
-      id: 'atelier-rose',
-      name: 'Atelier Rose',
-      city: 'Westlake, TX',
-      zip: '78746',
-      status: 'Approved',
-      reviewStatus: 'Approved',
-      membership: 'Paid'
-    },
-    {
-      id: 'good-form',
-      name: 'Good Form Studio',
-      city: 'South Austin, TX',
-      zip: '78745',
-      status: 'Approved',
-      reviewStatus: 'Approved',
-      membership: 'Paid'
-    }
-  ];
-
-  const [studios, setStudios] = useState(initialStudios);
+  const [studios, setStudios] = useState([]);
   const [tickets, setTickets] = useState([]);
-  const [customers, setCustomers] = useState([
-    { id: 1, name: 'Alexandra Morgan' },
-    { id: 2, name: 'Marcus Chen' },
-    { id: 3, name: 'Sarah Jenkins' }
-  ]);
+  const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reviewModalStudio, setReviewModalStudio] = useState(null);
+  const [approvedModalData, setApprovedModalData] = useState(null);
 
   // Fetch all live data dynamically
   const loadOverviewData = useCallback(async () => {
@@ -96,7 +30,7 @@ export default function OverviewView({ onNavigateTab }) {
         adminDataService.getCustomers()
       ]);
 
-      if (studiosData.status === 'fulfilled' && Array.isArray(studiosData.value) && studiosData.value.length > 0) {
+      if (studiosData.status === 'fulfilled' && Array.isArray(studiosData.value)) {
         setStudios(studiosData.value);
       }
 
@@ -104,7 +38,7 @@ export default function OverviewView({ onNavigateTab }) {
         setTickets(ticketsData.value);
       }
 
-      if (customersData.status === 'fulfilled' && Array.isArray(customersData.value) && customersData.value.length > 0) {
+      if (customersData.status === 'fulfilled' && Array.isArray(customersData.value)) {
         setCustomers(customersData.value);
       }
     } catch (err) {
@@ -177,14 +111,30 @@ export default function OverviewView({ onNavigateTab }) {
 
   // Studio modal handlers
   const handleApproveStudio = async (studioId) => {
+    let result = null;
     try {
-      await adminDataService.updateStudioStatus(studioId, 'Approved', false);
+      result = await adminDataService.updateStudioStatus(studioId, 'Approved', false);
     } catch (err) {
       console.warn('Backend update failed, applying local state update:', err);
     }
+    const current = studios.find(s => s.id === studioId) || reviewModalStudio;
     setStudios(prev => prev.map(s => s.id === studioId ? { ...s, status: 'Approved', reviewStatus: 'Approved', hasConflict: false } : s));
     setReviewModalStudio(null);
     window.dispatchEvent(new Event('admin_studios_updated'));
+
+    if (result && result.credentials) {
+      setApprovedModalData({ studio: result.studio || current, credentials: result.credentials });
+    } else {
+      setApprovedModalData({
+        studio: current,
+        credentials: {
+          studioId: current?.id,
+          email: current?.email,
+          password: current?.defaultPassword || 'Studio@123',
+          portalUrl: 'https://altration-panel.alteration-connect.workers.dev'
+        }
+      });
+    }
   };
 
   const handleGrantWaiver = async (studioId) => {
@@ -466,6 +416,22 @@ export default function OverviewView({ onNavigateTab }) {
           onSuspend={() => handleSuspendStudio(reviewModalStudio.id)}
         />
       )}
+
+      {/* Studio Approved Confirmation Screen with Generated Credentials */}
+      {approvedModalData && (
+        <div className="fixed inset-0 z-50 bg-[#F4F6F9] overflow-y-auto">
+          <StudioApprovedScreen
+            studio={approvedModalData.studio}
+            credentials={approvedModalData.credentials}
+            onClose={() => setApprovedModalData(null)}
+            onViewStudios={() => {
+              setApprovedModalData(null);
+              onNavigateTab && onNavigateTab('studios');
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
+
