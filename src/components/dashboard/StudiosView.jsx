@@ -175,8 +175,12 @@ export default function StudiosView() {
         : isSuspended
         ? 'bg-rose-50 text-rose-700 border-rose-200/80'
         : 'bg-amber-50 text-amber-700 border-amber-200/80',
-      membership: isApproved ? 'Paid' : 'Payment required',
-      membershipColor: isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-amber-50 text-amber-700 border-amber-200/80',
+      membership: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
+        ? `Paid (${s.paidAmount ? '$' + s.paidAmount : '$200'})`
+        : 'Not paid',
+      membershipColor: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+        : 'bg-rose-50 text-rose-700 border-rose-200/80 font-bold',
       listing: isApproved ? 'Live' : 'Hidden',
       listingColor: isApproved ? 'text-emerald-600' : 'text-slate-400',
       action: isApproved ? 'Manage' : 'Review',

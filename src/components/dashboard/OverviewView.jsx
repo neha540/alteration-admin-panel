@@ -103,9 +103,9 @@ export default function OverviewView({ onNavigateTab }) {
 
   const getStudioStatusText = (studio) => {
     const isConflict = Boolean(studio.hasConflict);
-    const isPaid = studio.membership === 'Paid';
+    const isPaid = Boolean(studio.membershipPaid === true || studio.paymentStatus === 'paid' || studio.membership === 'Paid');
     const territoryText = isConflict ? 'Territory conflict' : 'Territory clear';
-    const membershipText = isPaid ? 'Membership active' : 'Membership needed';
+    const membershipText = isPaid ? 'Membership paid' : 'Not paid';
     return `${territoryText} · ${membershipText}`;
   };
 
@@ -247,9 +247,20 @@ export default function OverviewView({ onNavigateTab }) {
                         <Briefcase className="w-5 h-5 stroke-[1.8]" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-sm text-slate-900">
-                          {studio.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-sm text-slate-900">
+                            {studio.name}
+                          </h3>
+                          {Boolean(studio.membershipPaid === true || studio.paymentStatus === 'paid' || studio.membership === 'Paid') ? (
+                            <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Paid ({studio.paidAmount ? `$${studio.paidAmount}` : '$200'})
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              Not Paid
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {getStudioLocation(studio)}
                         </p>

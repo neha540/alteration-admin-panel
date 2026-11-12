@@ -33,7 +33,8 @@ export default function StudioReviewModal({
 
   const isPending = studio.status === 'In review' || studio.reviewStatus === 'In review';
   const isCongressCare = studio.name?.includes('Congress') || studio.initials === 'CC' || studio.hasConflict;
-  const [membershipActive, setMembershipActive] = useState(!isPending);
+  const isPaid = Boolean(studio.membershipPaid === true || studio.paymentStatus === 'paid' || studio.membership === 'Paid');
+  const [membershipActive, setMembershipActive] = useState(isPaid);
   const [studioStatus, setStudioStatus] = useState(isPending ? 'In review' : (studio.status || 'Approved'));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,7 +64,7 @@ export default function StudioReviewModal({
     bio: studio.bio || studio.about || 'A neighborhood alteration and tailoring studio.',
     image: studio.image || '',
     status: studio.status || (isPending ? 'In review' : 'Approved'),
-    membership: studio.membership || (isPending ? 'Payment required' : 'Paid')
+    membership: isPaid ? 'Paid' : 'Payment required'
   });
 
   const availableSpecialties = [
@@ -384,8 +385,8 @@ export default function StudioReviewModal({
                     onChange={(e) => setEditForm({ ...editForm, membership: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 bg-white"
                   >
-                    <option value="Paid">Paid ($200/mo)</option>
-                    <option value="Payment required">Payment required</option>
+                    <option value="Paid">Paid (${studio.paidAmount || studio.membershipFee || 200}/mo)</option>
+                    <option value="Payment required">Not Paid (Payment required)</option>
                   </select>
                 </div>
               </div>
@@ -515,11 +516,11 @@ export default function StudioReviewModal({
 
                     {membershipActive ? (
                       <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Membership Paid ($200/mo)
+                        Membership Paid (${studio.paidAmount || studio.membershipFee || 200}/mo)
                       </span>
                     ) : (
-                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        Payment required ($200/mo)
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        Not Paid (${studio.membershipFee || 200}/mo)
                       </span>
                     )}
                   </div>
@@ -644,17 +645,21 @@ export default function StudioReviewModal({
                         </div>
                         <div>
                           <span className="font-bold text-slate-900 block">Membership paid</span>
-                          <span className="text-[11.5px] text-slate-500 block">$200 per month</span>
+                          <span className="text-[11.5px] text-slate-500 block">
+                            ${studio.paidAmount || studio.membershipFee || 200} per month · Paid
+                          </span>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-start gap-2.5">
-                        <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <CreditCard className="w-3.5 h-3.5" />
+                        <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
                         </div>
                         <div>
-                          <span className="font-bold text-amber-800 block">Membership is not active</span>
-                          <span className="text-[11.5px] text-slate-500 block">$200 per month</span>
+                          <span className="font-bold text-rose-800 block">Not Paid</span>
+                          <span className="text-[11.5px] text-slate-500 block">
+                            Membership fee (${studio.membershipFee || 200}/mo) has not been paid yet.
+                          </span>
                         </div>
                       </div>
                     )}
