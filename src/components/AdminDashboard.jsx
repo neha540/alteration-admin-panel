@@ -15,7 +15,8 @@ import {
   ExternalLink, 
   Bell, 
   LogOut,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from 'lucide-react';
 import AdminLogo from './AdminLogo';
 import OverviewView from './dashboard/OverviewView';
@@ -94,12 +95,44 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
     };
     window.addEventListener('admin_studios_updated', handleStudiosUpdate);
     window.addEventListener('admin_settings_updated', handleSettingsUpdate);
+
+    // Initial URL sync and popstate listener
+    const validTabs = ['overview', 'studios', 'orders', 'territories', 'subscriptions', 'customers', 'reviews', 'faqs', 'activity', 'settings'];
+    const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+    if (validTabs.includes(path)) {
+      setActiveNav(path);
+      document.title = `${path.charAt(0).toUpperCase() + path.slice(1)} | Admin Workspace`;
+    }
+
+    const handlePopState = () => {
+      const p = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      if (validTabs.includes(p)) {
+        setActiveNav(p);
+      } else {
+        setActiveNav('overview');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('admin_studios_updated', handleStudiosUpdate);
       window.removeEventListener('admin_settings_updated', handleSettingsUpdate);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  const handleNavClick = (key) => {
+    setActiveNav(key);
+    setActiveModal(null);
+    if (typeof window !== 'undefined') {
+      const targetPath = key === 'overview' ? '/' : `/${key}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ tab: key }, '', targetPath);
+      }
+      document.title = `${key.charAt(0).toUpperCase() + key.slice(1)} | Admin Workspace`;
+    }
+  };
 
   const navItems = [
     { key: 'overview', label: 'Overview', icon: LayoutGrid, breadcrumb: 'Overview' },
@@ -157,10 +190,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() => {
-                    setActiveNav(item.key);
-                    setActiveModal(null);
-                  }}
+                  onClick={() => handleNavClick(item.key)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-[13px] font-medium transition cursor-pointer ${
                     isActive
                       ? 'bg-[#1E3A5F] text-white font-semibold'
@@ -224,8 +254,18 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
       <div className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden bg-white">
         {/* Top Bar Header */}
         <header className="bg-white border-b border-slate-100 sticky top-0 z-30 shrink-0 px-6 sm:px-10 h-16 flex items-center justify-between">
-          {/* Breadcrumb */}
+          {/* Breadcrumb with Back button */}
           <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
+            {activeNav !== 'overview' && (
+              <button
+                type="button"
+                onClick={() => handleNavClick('overview')}
+                className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 font-bold mr-2 transition cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Overview</span>
+              </button>
+            )}
             <span>Platform console</span>
             <span>/</span>
             <span className="text-slate-700 font-semibold">{currentItem.breadcrumb}</span>
