@@ -12,6 +12,8 @@ export default function StudiosView() {
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
   const [liveStudios, setLiveStudios] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const [newStudioForm, setNewStudioForm] = useState({
     studioName: '',
     ownerName: '',
@@ -22,8 +24,8 @@ export default function StudiosView() {
     state: '',
     zip: '',
     specialties: ['Everyday'],
-    startingPrice: '$25',
-    turnaround: '2–3 days',
+    startingPrice: '25',
+    turnaround: '2–3 business days',
     hours: 'Mon–Sat 9:30 AM – 7:30 PM',
     image: '',
     bio: ''
@@ -74,6 +76,10 @@ export default function StudiosView() {
     fetchStudios();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterTab, searchQuery]);
+
   // Handle Admin registration directly to backend
   const handleAdminRegisterSubmit = async (e) => {
     e.preventDefault();
@@ -105,8 +111,8 @@ export default function StudiosView() {
           state: newStudioForm.state.trim() || 'TX',
           zip: newStudioForm.zip.trim() || '78701',
           specialties: newStudioForm.specialties,
-          startingPrice: newStudioForm.startingPrice.trim() || '$25',
-          turnaround: newStudioForm.turnaround.trim() || '2–3 days',
+          startingPrice: newStudioForm.startingPrice ? ('$' + String(newStudioForm.startingPrice).replace(/\D/g, '')) : '$25',
+          turnaround: newStudioForm.turnaround.trim() || '2–3 business days',
           hours: newStudioForm.hours.trim() || 'Mon–Sat 9:30 AM – 7:30 PM',
           image: newStudioForm.image.trim(),
           bio: newStudioForm.bio.trim() || ''
@@ -130,8 +136,8 @@ export default function StudiosView() {
         state: '',
         zip: '',
         specialties: ['Everyday'],
-        startingPrice: '$25',
-        turnaround: '2–3 days',
+        startingPrice: '25',
+        turnaround: '2–3 business days',
         hours: 'Mon–Sat 9:30 AM – 7:30 PM',
         image: '',
         bio: ''
@@ -355,7 +361,7 @@ export default function StudiosView() {
                   </td>
                 </tr>
               ) : (
-                filteredStudios.map((s) => (
+                filteredStudios.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/60 transition group">
                     {/* Studio Name + Owner */}
                     <td className="py-4 px-6">
@@ -436,13 +442,34 @@ export default function StudiosView() {
           </table>
         </div>
 
-        {/* Card Footer */}
-        <div className="p-4 sm:px-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span>{filteredStudios.length} of {allCount} studios</span>
-          <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-            <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
-            <span>Approval + membership + territory</span>
-          </div>
+        {/* Card Footer with Pagination */}
+        <div className="p-4 sm:px-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <span>
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredStudios.length)} of {filteredStudios.length} studios ({allCount} total)
+          </span>
+          {filteredStudios.length > itemsPerPage && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="px-2 font-mono font-medium text-slate-700">
+                {currentPage} / {Math.ceil(filteredStudios.length / itemsPerPage)}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= Math.ceil(filteredStudios.length / itemsPerPage)}
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredStudios.length / itemsPerPage), p + 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
@@ -502,7 +529,7 @@ export default function StudiosView() {
                     type="text"
                     required
                     value={newStudioForm.ownerName}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, ownerName: e.target.value })}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, ownerName: e.target.value.replace(/[^a-zA-Z\s.\-']/g, '') })}
                     placeholder="e.g. Rachel Adams"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
@@ -530,7 +557,7 @@ export default function StudiosView() {
                   <input
                     type="tel"
                     value={newStudioForm.phone}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, phone: e.target.value })}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, phone: e.target.value.replace(/[^0-9+\-()\s]/g, '') })}
                     placeholder="+1 (512) 555-0199"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
@@ -560,7 +587,7 @@ export default function StudiosView() {
                   <input
                     type="text"
                     value={newStudioForm.city}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, city: e.target.value })}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, city: e.target.value.replace(/[^a-zA-Z\s,.\-']/g, '') })}
                     placeholder="e.g. Austin"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
@@ -572,7 +599,7 @@ export default function StudiosView() {
                   <input
                     type="text"
                     value={newStudioForm.state}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, state: e.target.value })}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, state: e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 2).toUpperCase() })}
                     placeholder="e.g. TX"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
@@ -584,7 +611,7 @@ export default function StudiosView() {
                   <input
                     type="text"
                     value={newStudioForm.zip}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, zip: e.target.value })}
+                    onChange={(e) => setNewStudioForm({ ...newStudioForm, zip: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                     placeholder="e.g. 78701"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
@@ -623,37 +650,51 @@ export default function StudiosView() {
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
                     Starting price
                   </label>
-                  <input
-                    type="text"
-                    value={newStudioForm.startingPrice}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, startingPrice: e.target.value })}
-                    placeholder="$25"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">$</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={newStudioForm.startingPrice}
+                      onChange={(e) => setNewStudioForm({ ...newStudioForm, startingPrice: e.target.value.replace(/\D/g, '') })}
+                      placeholder="25"
+                      className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
                     Turnaround time
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={newStudioForm.turnaround}
                     onChange={(e) => setNewStudioForm({ ...newStudioForm, turnaround: e.target.value })}
-                    placeholder="2–3 days"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white cursor-pointer"
+                  >
+                    <option value="1–2 business days">1–2 business days (Express)</option>
+                    <option value="2–3 business days">2–3 business days (Standard)</option>
+                    <option value="3–5 business days">3–5 business days</option>
+                    <option value="5–7 business days">5–7 business days (1 week)</option>
+                    <option value="1–2 weeks">1–2 weeks</option>
+                    <option value="2–3 weeks">2–3 weeks (Bridal & Complex)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
                     Operating hours
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={newStudioForm.hours}
                     onChange={(e) => setNewStudioForm({ ...newStudioForm, hours: e.target.value })}
-                    placeholder="Mon–Sat 9:30 AM – 7:30 PM"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white cursor-pointer"
+                  >
+                    <option value="Mon–Sat 9:30 AM – 7:30 PM">Mon–Sat 9:30 AM – 7:30 PM</option>
+                    <option value="Mon–Fri 9:00 AM – 6:00 PM">Mon–Fri 9:00 AM – 6:00 PM</option>
+                    <option value="Mon–Sat 10:00 AM – 7:00 PM">Mon–Sat 10:00 AM – 7:00 PM</option>
+                    <option value="Tue–Sat 10:00 AM – 6:00 PM">Tue–Sat 10:00 AM – 6:00 PM</option>
+                    <option value="Mon–Sun 10:00 AM – 8:00 PM">Mon–Sun 10:00 AM – 8:00 PM</option>
+                    <option value="By Appointment Only">By Appointment Only</option>
+                  </select>
                 </div>
               </div>
 

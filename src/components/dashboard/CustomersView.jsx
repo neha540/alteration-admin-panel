@@ -12,6 +12,12 @@ export default function CustomersView() {
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
   const [liveCustomers, setLiveCustomers] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const handleReviewStudioFromOrder = async (order) => {
     const studioName = order?.studio || order?.studioName || '';
@@ -217,7 +223,7 @@ export default function CustomersView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredCustomers.map((c) => (
+                {filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/60 transition">
                     {/* Customer */}
                     <td className="py-4 px-6">
@@ -272,6 +278,40 @@ export default function CustomersView() {
             </table>
           </div>
         )}
+
+        {/* Card Footer with Pagination */}
+        <div className="p-4 sm:px-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <span>
+            {filteredCustomers.length === 0 ? (
+              '0 customers'
+            ) : (
+              `Showing ${(currentPage - 1) * itemsPerPage + 1} to ${Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of ${filteredCustomers.length} customers`
+            )}
+          </span>
+          {filteredCustomers.length > itemsPerPage && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="px-2 font-mono font-medium text-slate-700">
+                {currentPage} / {Math.ceil(filteredCustomers.length / itemsPerPage)}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= Math.ceil(filteredCustomers.length / itemsPerPage)}
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredCustomers.length / itemsPerPage), p + 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Customer Account Details Modal */}

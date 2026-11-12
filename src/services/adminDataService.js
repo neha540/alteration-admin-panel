@@ -177,5 +177,54 @@ export const adminDataService = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to update settings');
     return data.settings || settings;
+  },
+
+  // 9. FAQ Management
+  async getFaqs(params = {}) {
+    try {
+      const query = new URLSearchParams();
+      if (params.category && params.category !== 'All') query.append('category', params.category);
+      if (params.search) query.append('search', params.search);
+      const res = await fetch(`${API_BASE_URL}/admin/faqs?${query.toString()}`);
+      const data = await res.json();
+      if (res.ok && data.success && Array.isArray(data.faqs)) {
+        return data.faqs;
+      }
+      return [];
+    } catch (err) {
+      console.warn('Could not fetch admin faqs:', err);
+      return [];
+    }
+  },
+
+  async createFaq(faq) {
+    const res = await fetch(`${API_BASE_URL}/admin/faqs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(faq)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create FAQ');
+    return data.faq;
+  },
+
+  async updateFaq(id, updates) {
+    const res = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update FAQ');
+    return data.faq;
+  },
+
+  async deleteFaq(id) {
+    const res = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to delete FAQ');
+    return data;
   }
 };

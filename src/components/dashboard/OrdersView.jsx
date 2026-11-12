@@ -15,6 +15,8 @@ export default function OrdersView() {
   const [liveOrders, setLiveOrders] = useState([]);
   const [allStudios, setAllStudios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const fetchOrders = () => {
     adminDataService.getOrders()
@@ -84,6 +86,10 @@ export default function OrdersView() {
       window.removeEventListener('admin_orders_updated', handleUpdate);
     };
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, studioFilter, searchQuery]);
 
   const currentOrders = (liveOrders || []).map(o => {
     const rawStatus = o.status || 'Quote requested';
@@ -268,7 +274,7 @@ export default function OrdersView() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50/60 transition">
                     {/* Order & Customer */}
                     <td className="py-4 px-6">
@@ -332,9 +338,32 @@ export default function OrdersView() {
           </table>
         </div>
 
-        {/* Card Footer note */}
-        <div className="p-4 px-6 bg-slate-50/50 border-t border-slate-100 text-xs text-slate-500">
+        {/* Card Footer with Pagination */}
+        <div className="p-4 px-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <span>{filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'} · Measurement values are private to the customer and assigned studio.</span>
+          {filteredOrders.length > itemsPerPage && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="px-2 font-mono font-medium text-slate-700">
+                {currentPage} / {Math.ceil(filteredOrders.length / itemsPerPage)}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= Math.ceil(filteredOrders.length / itemsPerPage)}
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredOrders.length / itemsPerPage), p + 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition font-semibold cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

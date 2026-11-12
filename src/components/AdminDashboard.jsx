@@ -25,6 +25,7 @@ import TerritoriesView from './dashboard/TerritoriesView';
 import SubscriptionsView from './dashboard/SubscriptionsView';
 import CustomersView from './dashboard/CustomersView';
 import ReviewsView from './dashboard/ReviewsView';
+import FaqsView from './dashboard/FaqsView';
 import ActivitySupportView from './dashboard/ActivitySupportView';
 import NetworkSettingsView from './dashboard/NetworkSettingsView';
 
@@ -108,6 +109,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
     { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard, breadcrumb: 'Subscriptions' },
     { key: 'customers', label: 'Customers', icon: Users, breadcrumb: 'Customers' },
     { key: 'reviews', label: 'Reviews', icon: Star, breadcrumb: 'Reviews' },
+    { key: 'faqs', label: 'FAQs & Help', icon: HelpCircle, breadcrumb: 'FAQs & Help' },
     { key: 'activity', label: 'Activity & support', icon: Clock, breadcrumb: 'Activity & support' },
     { key: 'settings', label: 'Network settings', icon: Settings, breadcrumb: 'Network settings' },
   ];
@@ -284,6 +286,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
           {activeNav === 'subscriptions' && <SubscriptionsView />}
           {activeNav === 'customers' && <CustomersView />}
           {activeNav === 'reviews' && <ReviewsView />}
+          {activeNav === 'faqs' && <FaqsView />}
           {activeNav === 'activity' && <ActivitySupportView />}
           {activeNav === 'settings' && <NetworkSettingsView />}
         </main>
