@@ -260,10 +260,11 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
               <button
                 type="button"
                 onClick={() => handleNavClick('overview')}
-                className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 font-bold mr-2 transition cursor-pointer"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-600 hover:text-slate-900 mr-2 transition cursor-pointer shadow-2xs group"
+                title="Back to Overview"
+                aria-label="Back to Overview"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Overview</span>
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition" />
               </button>
             )}
             <span>Platform console</span>
@@ -522,3 +523,4 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
     </div>
   );
 }
+
