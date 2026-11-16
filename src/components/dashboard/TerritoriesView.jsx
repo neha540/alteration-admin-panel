@@ -166,19 +166,19 @@ export default function TerritoriesView() {
                 No studios registered in the network yet. Studio territory locations will appear here.
               </div>
             ) : (
-              studios.map((s) => (
-              <div key={s.id} className="py-2.5 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center">
-                    {s.id}
+              studios.map((s, index) => (
+              <div key={s.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-6 h-6 shrink-0 rounded-md bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center">
+                    {index + 1}
                   </span>
-                  <div>
-                    <span className="font-bold text-xs text-slate-900">{s.name}</span>
-                    <span className="text-[11px] text-slate-400 block">{s.location}</span>
+                  <div className="min-w-0">
+                    <span className="font-bold text-xs text-slate-900 block truncate">{s.name}</span>
+                    <span className="text-[11px] text-slate-400 block truncate">{s.location}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${s.statusColor}`}>
                     {s.status}
                   </span>
