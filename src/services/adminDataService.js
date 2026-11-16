@@ -2,11 +2,18 @@
 const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
 
+// Attach the admin JWT (saved at sign-in) to every admin API call
+const authHeaders = (extra = {}) => {
+  let token = null;
+  try { token = localStorage.getItem('ac_admin_token'); } catch (e) {}
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : { ...extra };
+};
+
 export const adminDataService = {
   // 1. Studios
   async getStudios() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/studios`);
+      const res = await fetch(`${API_BASE_URL}/admin/studios`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.studios)) {
         return data.studios;
@@ -21,7 +28,7 @@ export const adminDataService = {
   async updateStudioStatus(id, status, hasConflict = false) {
     const res = await fetch(`${API_BASE_URL}/admin/studios/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ status, hasConflict })
     });
     const data = await res.json();
@@ -32,7 +39,7 @@ export const adminDataService = {
   async updateStudio(id, updates) {
     const res = await fetch(`${API_BASE_URL}/admin/studios/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(updates)
     });
     const data = await res.json();
@@ -43,7 +50,7 @@ export const adminDataService = {
   // 2. Orders
   async getOrders() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/orders`);
+      const res = await fetch(`${API_BASE_URL}/admin/orders`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.orders)) {
         return data.orders;
@@ -58,7 +65,7 @@ export const adminDataService = {
   async updateOrderStatus(id, status) {
     const res = await fetch(`${API_BASE_URL}/admin/orders/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ status })
     });
     const data = await res.json();
@@ -69,7 +76,7 @@ export const adminDataService = {
   // 3. Customers
   async getCustomers() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/customers`);
+      const res = await fetch(`${API_BASE_URL}/admin/customers`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.customers)) {
         return data.customers;
@@ -84,7 +91,7 @@ export const adminDataService = {
   // 4. Support Tickets
   async getSupportTickets() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/support`);
+      const res = await fetch(`${API_BASE_URL}/admin/support`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.tickets)) {
         return data.tickets;
@@ -99,7 +106,7 @@ export const adminDataService = {
   async resolveTicket(id) {
     const res = await fetch(`${API_BASE_URL}/admin/support/${id}/resolve`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' }
+      headers: authHeaders({ 'Content-Type': 'application/json' })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to resolve ticket');
@@ -109,7 +116,7 @@ export const adminDataService = {
   // 5. Reviews
   async getReviews() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/reviews`);
+      const res = await fetch(`${API_BASE_URL}/admin/reviews`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success) {
         return data;
@@ -124,7 +131,7 @@ export const adminDataService = {
   async updateReviewStatus(id, status) {
     const res = await fetch(`${API_BASE_URL}/admin/reviews/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ status })
     });
     const data = await res.json();
@@ -134,7 +141,8 @@ export const adminDataService = {
 
   async deleteReview(id) {
     const res = await fetch(`${API_BASE_URL}/admin/reviews/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: authHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to delete review');
@@ -144,7 +152,7 @@ export const adminDataService = {
   // 6. Network Settings
   async getSettings() {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/settings`);
+      const res = await fetch(`${API_BASE_URL}/admin/settings`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && data.settings) {
         localStorage.setItem('alteration_admin_network_settings', JSON.stringify(data.settings));
@@ -171,7 +179,7 @@ export const adminDataService = {
     } catch (e) {}
     const res = await fetch(`${API_BASE_URL}/admin/settings`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(settings)
     });
     const data = await res.json();
@@ -185,7 +193,7 @@ export const adminDataService = {
       const query = new URLSearchParams();
       if (params.category && params.category !== 'All') query.append('category', params.category);
       if (params.search) query.append('search', params.search);
-      const res = await fetch(`${API_BASE_URL}/admin/faqs?${query.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/admin/faqs?${query.toString()}`, { headers: authHeaders() });
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.faqs)) {
         return data.faqs;
@@ -200,7 +208,7 @@ export const adminDataService = {
   async createFaq(faq) {
     const res = await fetch(`${API_BASE_URL}/admin/faqs`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(faq)
     });
     const data = await res.json();
@@ -211,7 +219,7 @@ export const adminDataService = {
   async updateFaq(id, updates) {
     const res = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(updates)
     });
     const data = await res.json();
@@ -221,7 +229,8 @@ export const adminDataService = {
 
   async deleteFaq(id) {
     const res = await fetch(`${API_BASE_URL}/admin/faqs/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: authHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to delete FAQ');
