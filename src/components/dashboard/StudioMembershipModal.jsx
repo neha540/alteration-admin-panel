@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, X, Download } from 'lucide-react';
+import { downloadReceipt } from '../../utils/receipt';
 
 export default function StudioMembershipModal({ 
   studio, 
@@ -17,6 +18,31 @@ export default function StudioMembershipModal({
     paymentId: 'SP-1000',
     paymentDate: 'Oct 1, 9:00 AM · Paid',
     paymentAmount: '$200'
+  };
+
+  // Payment details for the receipt (works for both the preview data and a real studio record)
+  const receiptId = currentStudio.paymentId || `MEM-${String(currentStudio.id || currentStudio.name || '1').replace(/\W+/g, '').slice(0, 12)}`;
+  const receiptAmount = currentStudio.paymentAmount || (currentStudio.paidAmount ? `$${currentStudio.paidAmount}` : (currentStudio.fee || ''));
+  const receiptDate = currentStudio.paymentDate
+    || (currentStudio.paidAt ? new Date(currentStudio.paidAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '');
+  const receiptEmail = currentStudio.billingEmail || currentStudio.email || '';
+
+  const handleDownloadReceipt = () => {
+    downloadReceipt({
+      title: 'Studio Membership Receipt',
+      receiptNumber: receiptId,
+      status: currentStudio.membership === 'Paid' ? 'Paid' : (currentStudio.membership || 'Recorded'),
+      amount: receiptAmount,
+      rows: [
+        ['Studio', currentStudio.name],
+        ['Location', currentStudio.location],
+        ['Billing email', receiptEmail],
+        ['Plan', 'Studio Partner membership'],
+        ['Monthly fee', currentStudio.fee],
+        ['Payment date', receiptDate]
+      ],
+      note: 'Issued by Alteration Connect for the studio membership fee.'
+    });
   };
 
   return (
@@ -100,21 +126,21 @@ export default function StudioMembershipModal({
             <div className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
               <div>
                 <span className="font-bold text-xs text-slate-900 block">
-                  {currentStudio.paymentId}
+                  {receiptId}
                 </span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">
-                  {currentStudio.paymentDate}
+                  {receiptDate}
                 </span>
               </div>
 
               <div className="flex items-center gap-4">
                 <span className="font-bold text-xs text-slate-900">
-                  {currentStudio.paymentAmount}
+                  {receiptAmount}
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => alert(`Receipt downloaded for ${currentStudio.paymentId}`)}
+                  onClick={handleDownloadReceipt}
                   className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-white text-slate-800 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                 >
                   <Download className="w-3.5 h-3.5" />
