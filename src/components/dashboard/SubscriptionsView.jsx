@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Search, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, CreditCard, Download } from 'lucide-react';
 import { adminDataService } from '../../services/adminDataService';
 import StudioMembershipModal from './StudioMembershipModal';
+import { downloadCsvFile, ADMIN_SUBSCRIPTION_CSV_HEADERS, formatAdminSubscriptionForCsv } from '../../utils/csvExport';
 
 export default function SubscriptionsView() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,16 +53,38 @@ export default function SubscriptionsView() {
     return true;
   });
 
+  const handleExportSubscriptions = () => {
+    if (!subsData || subsData.length === 0) {
+      alert('No subscription records available to export.');
+      return;
+    }
+    const targetSubs = filteredSubs.length > 0 ? filteredSubs : subsData;
+    const rows = targetSubs.map(s => formatAdminSubscriptionForCsv(s));
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadCsvFile(`studio_subscriptions_${dateStr}.csv`, ADMIN_SUBSCRIPTION_CSV_HEADERS, rows);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
-          Subscriptions
-        </h1>
-        <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
-          Monthly memberships and approved fee waivers.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
+            Subscriptions
+          </h1>
+          <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
+            Monthly memberships and approved fee waivers.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleExportSubscriptions}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition cursor-pointer self-start sm:self-auto"
+        >
+          <Download className="w-4 h-4 stroke-[2]" />
+          <span>Export subscriptions</span>
+        </button>
       </div>
 
       {/* Main Table Card matching Image 15 */}

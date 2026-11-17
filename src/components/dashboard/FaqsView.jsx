@@ -16,6 +16,7 @@ import {
   EyeOff,
   Filter,
   Check
+  
 } from 'lucide-react';
 
 export default function FaqsView() {

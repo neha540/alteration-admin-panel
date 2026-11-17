@@ -123,10 +123,11 @@ export default function StudioReviewModal({
     }
   };
 
-  const handleGrantPilotWaiver = () => {
+  const handleGrantPilotWaiver = async () => {
     setMembershipActive(true);
-    if (onGrantWaiver) onGrantWaiver(studio.id);
-    alert("Pilot waiver granted: Membership requirement fulfilled for 90 days.");
+    if (onGrantWaiver) {
+      await onGrantWaiver(studio.id);
+    }
   };
 
   const currentDetails = {

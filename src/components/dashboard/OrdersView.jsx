@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
 import { Search, Download, ChevronDown, PackageOpen } from 'lucide-react';
+import { downloadCsvFile, ADMIN_ORDER_CSV_HEADERS, formatAdminOrderForCsv } from '../../utils/csvExport';
 import OrderDetailModal from './OrderDetailModal';
 import StudioReviewModal from './StudioReviewModal';
 import CustomerDetailsModal from './CustomerDetailsModal';
@@ -100,6 +101,7 @@ export default function OrdersView() {
 
     const statusColor = 
       (rawStatus === 'Completed' || rawStatus === 'Paid') ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' :
+      rawStatus === 'Ready for pickup' ? 'bg-purple-50 text-purple-700 border-purple-200/80' :
       rawStatus === 'In progress' ? 'bg-sky-50 text-sky-700 border-sky-200/80' :
       (rawStatus === 'Quote ready' || rawStatus === 'Quote sent') ? 'bg-blue-50 text-blue-700 border-blue-200/80' :
       'bg-amber-50 text-amber-700 border-amber-200/80';
@@ -151,6 +153,17 @@ export default function OrdersView() {
     return true;
   });
 
+  const handleExportOrders = () => {
+    if (!currentOrders || currentOrders.length === 0) {
+      alert("No orders available to export.");
+      return;
+    }
+    const targetOrders = filteredOrders.length > 0 ? filteredOrders : currentOrders;
+    const rows = targetOrders.map(o => formatAdminOrderForCsv(o.raw || o));
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadCsvFile(`all_platform_orders_${dateStr}.csv`, ADMIN_ORDER_CSV_HEADERS, rows);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -166,7 +179,7 @@ export default function OrdersView() {
 
         <button
           type="button"
-          onClick={() => alert("Orders exported as CSV.")}
+          onClick={handleExportOrders}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition cursor-pointer self-start sm:self-auto"
         >
           <Download className="w-4 h-4 stroke-[2]" />

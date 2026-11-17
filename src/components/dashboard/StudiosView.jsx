@@ -26,12 +26,46 @@ export default function StudiosView() {
     state: '',
     zip: '',
     specialties: ['Everyday'],
-    startingPrice: '25',
+    startingPrice: '',
     turnaround: '2–3 business days',
     hours: 'Mon–Sat 9:30 AM – 7:30 PM',
     image: '',
     bio: ''
   });
+
+  const defaultAdminServices = [
+    { id: 1, name: '', price: '' }
+  ];
+  const [adminServices, setAdminServices] = useState(defaultAdminServices);
+
+  const handleAddAdminService = () => {
+    const newId = adminServices.length > 0 ? Math.max(...adminServices.map(s => s.id || 0)) + 1 : 1;
+    setAdminServices([...adminServices, { id: newId, name: '', price: '' }]);
+  };
+
+  const handleRemoveAdminService = (id) => {
+    if (adminServices.length <= 1) return;
+    setAdminServices(adminServices.filter(s => s.id !== id));
+  };
+
+  const handleUpdateAdminService = (id, field, value) => {
+    setAdminServices(adminServices.map(s => s.id === id ? { ...s, [field]: value } : s));
+  };
+
+  const validAdminServices = adminServices
+    .filter(s => s.name && s.name.trim())
+    .map(s => ({
+      id: s.id,
+      name: s.name.trim(),
+      price: String(s.price || '').replace(/\D/g, '')
+    }));
+
+  const numericAdminPrices = validAdminServices
+    .map(s => Number(s.price))
+    .filter(p => !isNaN(p) && p > 0);
+  const minAdminStartingPrice = numericAdminPrices.length > 0
+    ? `$${Math.min(...numericAdminPrices)}`
+    : (newStudioForm.startingPrice ? `$${newStudioForm.startingPrice.replace(/\D/g, '')}` : '');
 
   const availableSpecialties = [
     'Everyday',
@@ -113,7 +147,8 @@ export default function StudiosView() {
           state: newStudioForm.state.trim() || 'TX',
           zip: newStudioForm.zip.trim() || '78701',
           specialties: newStudioForm.specialties,
-          startingPrice: newStudioForm.startingPrice ? ('$' + String(newStudioForm.startingPrice).replace(/\D/g, '')) : '$25',
+          services: validAdminServices.length > 0 ? validAdminServices : defaultAdminServices,
+          startingPrice: minAdminStartingPrice,
           turnaround: newStudioForm.turnaround.trim() || '2–3 business days',
           hours: newStudioForm.hours.trim() || 'Mon–Sat 9:30 AM – 7:30 PM',
           image: newStudioForm.image.trim(),
@@ -650,24 +685,8 @@ export default function StudiosView() {
                 </div>
               </div>
 
-              {/* Pricing, Turnaround, Hours */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Starting price
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">$</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={newStudioForm.startingPrice}
-                      onChange={(e) => setNewStudioForm({ ...newStudioForm, startingPrice: e.target.value.replace(/\D/g, '') })}
-                      placeholder="25"
-                      className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                    />
-                  </div>
-                </div>
+              {/* Turnaround & Operating hours */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="text-xs font-semibold text-slate-800 block mb-1">
                     Turnaround time
@@ -701,6 +720,82 @@ export default function StudiosView() {
                     <option value="Mon–Sun 10:00 AM – 8:00 PM">Mon–Sun 10:00 AM – 8:00 PM</option>
                     <option value="By Appointment Only">By Appointment Only</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Services & Starting prices */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-800 block">
+                      Services & starting prices
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Lowest service price automatically sets studio starting price.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddAdminService}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition cursor-pointer px-2.5 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add service</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-200">
+                  {adminServices.map((srv, idx) => (
+                    <div key={srv.id || idx} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-7">
+                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                          Service name
+                        </label>
+                        <input
+                          type="text"
+                          value={srv.name}
+                          onChange={(e) => handleUpdateAdminService(srv.id, 'name', e.target.value)}
+                          placeholder="e.g. Trouser hemming"
+                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-blue-600 transition"
+                        />
+                      </div>
+                      <div className="col-span-4">
+                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                          Price ($)
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2 text-slate-400 font-bold text-xs select-none pointer-events-none">$</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={srv.price}
+                            onChange={(e) => handleUpdateAdminService(srv.id, 'price', e.target.value.replace(/\D/g, ''))}
+                            placeholder="20"
+                            className="w-full pl-5 pr-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-blue-600 transition"
+                          />
+                        </div>
+                      </div>
+                      <div className="col-span-1 flex items-end justify-center pt-3.5">
+                        {adminServices.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAdminService(srv.id)}
+                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            title="Remove service"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/80 text-xs text-slate-600 font-medium">
+                    <span>Studio starting price badge:</span>
+                    <span className="font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded text-[11px] border border-blue-200">
+                      {minAdminStartingPrice || 'Set by service price'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -823,7 +918,17 @@ export default function StudiosView() {
           }}
           onGrantWaiver={async (id) => {
             try {
-              await adminDataService.updateStudioStatus(id, 'Approved');
+              await adminDataService.updateStudio(id, {
+                status: 'Approved',
+                membership: 'Paid',
+                membershipPaid: true,
+                paymentStatus: 'paid',
+                waiverGranted: true,
+                waiverReason: 'Pilot waiver 90 days',
+                waiverDate: new Date().toISOString()
+              });
+              setToastMessage('Pilot waiver granted for 90 days. Membership requirement fulfilled.');
+              setTimeout(() => setToastMessage(''), 4000);
               fetchStudios();
             } catch (err) {
               console.warn('Failed to grant waiver:', err);

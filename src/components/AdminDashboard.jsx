@@ -47,11 +47,19 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
   const [activeModal, setActiveModal] = useState(initialModal);
   const [awaitingCount, setAwaitingCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [liveTickets, setLiveTickets] = useState([]);
+  const [targetSuspendStudioId, setTargetSuspendStudioId] = useState(null);
   const [networkSettings, setNetworkSettings] = useState({
     membershipFee: '200',
     studioSpacing: '5',
     supportEmail: 'support@alterationconnect.example'
   });
+
+  const fetchTickets = () => {
+    adminDataService.getSupportTickets().then(t => {
+      if (Array.isArray(t)) setLiveTickets(t);
+    }).catch(() => {});
+  };
 
   const fetchAwaitingCount = () => {
     adminDataService.getStudios().then(studios => {
@@ -77,9 +85,11 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
   useEffect(() => {
     fetchAwaitingCount();
     fetchSettings();
+    fetchTickets();
     const interval = setInterval(() => {
       fetchAwaitingCount();
       fetchSettings();
+      fetchTickets();
     }, 3000);
     const handleStudiosUpdate = () => fetchAwaitingCount();
     const handleSettingsUpdate = (e) => {
@@ -409,9 +419,29 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
       {/* Screen 26: Support ticket detail */}
       {activeModal === '26-support' && (
         <SupportTicketModal
-          ticket={{ id: 'SUP-DEMO', from: 'Customer', email: 'alexandra@example.com', received: 'Oct 26, 4:01 PM', message: 'Please help me confirm my fitting time.', status: 'Open' }}
+          ticket={(() => {
+            const t = liveTickets.find(x => x.status === 'Open') || liveTickets[0];
+            if (t) {
+              return {
+                id: t.id,
+                from: t.customerName || 'Customer',
+                email: t.customerEmail || 'customer@example.com',
+                received: t.createdAt ? new Date(t.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Recent',
+                message: t.message || 'Support inquiry',
+                status: t.status || 'Open'
+              };
+            }
+            return { id: 'TICK-431', from: 'Customer Support', email: 'support@alterationconnect.com', received: 'Recent', message: 'No pending support tickets at this time.', status: 'Open' };
+          })()}
           onClose={() => setActiveModal(null)}
-          onResolve={() => setActiveModal('31-resolved')}
+          onResolve={async () => {
+            const t = liveTickets.find(x => x.status === 'Open') || liveTickets[0];
+            if (t?.id) {
+              try { await adminDataService.resolveTicket(t.id); } catch {}
+              fetchTickets();
+            }
+            setActiveModal('31-resolved');
+          }}
         />
       )}
 
@@ -459,12 +489,19 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
         <div className="fixed inset-0 z-50 bg-[#F4F6F9] overflow-y-auto">
           <SuspendStudioModal
             onClose={() => setActiveModal(null)}
-            onConfirmSuspension={() => {
-              alert("Studio listing suspended.");
+            onConfirmSuspension={async () => {
+              if (targetSuspendStudioId) {
+                try {
+                  await adminDataService.updateStudioStatus(targetSuspendStudioId, 'Suspended');
+                  window.dispatchEvent(new Event('admin_studios_updated'));
+                } catch (err) {
+                  console.warn('Failed to suspend studio:', err);
+                }
+              }
               setActiveModal(null);
               setActiveNav('studios');
             }}
-            onKeepActive={() => setActiveModal('20-active')}
+            onKeepActive={() => setActiveModal(null)}
           />
         </div>
       )}
