@@ -384,7 +384,37 @@ export default function StudiosView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredStudios.length === 0 ? (
+              {liveStudios === null ? (
+                [1, 2, 3, 4].map((k) => (
+                  <tr key={k} className="animate-pulse">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
+                        <div className="space-y-1.5">
+                          <div className="h-4 bg-slate-200 rounded w-36" />
+                          <div className="h-3 bg-slate-100 rounded w-24" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 space-y-1.5">
+                      <div className="h-4 bg-slate-200 rounded w-28" />
+                      <div className="h-3 bg-slate-100 rounded w-16" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-5 bg-slate-200 rounded-md w-24" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-5 bg-slate-200 rounded-md w-20" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-5 bg-slate-200 rounded-md w-16" />
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="h-7 bg-slate-100 rounded-lg w-16 ml-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : filteredStudios.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-14 text-center">
                     <div className="max-w-sm mx-auto space-y-2">

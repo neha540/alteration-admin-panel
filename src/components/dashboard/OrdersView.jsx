@@ -268,7 +268,28 @@ export default function OrdersView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredOrders.length === 0 ? (
+              {loading ? (
+                [1, 2, 3, 4].map((k) => (
+                  <tr key={k} className="animate-pulse">
+                    <td className="py-4 px-6 space-y-2">
+                      <div className="h-4 bg-slate-200 rounded w-44" />
+                      <div className="h-3 bg-slate-100 rounded w-28" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-4 bg-slate-200 rounded w-32" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-5 bg-slate-200 rounded-md w-24" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="h-4 bg-slate-200 rounded w-16" />
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="h-7 bg-slate-100 rounded-lg w-20 ml-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-14 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
@@ -277,11 +298,9 @@ export default function OrdersView() {
                       </div>
                       <p className="font-semibold text-slate-700 text-sm">No orders found</p>
                       <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                        {loading 
-                          ? 'Checking for network orders...' 
-                          : searchQuery || statusFilter !== 'all' || studioFilter !== 'all'
-                            ? 'No orders match your filter criteria. Try resetting filters.'
-                            : 'When a customer requests a quote or books an alteration on the web store, it will appear here in real time.'}
+                        {searchQuery || statusFilter !== 'all' || studioFilter !== 'all'
+                          ? 'No orders match your filter criteria. Try resetting filters.'
+                          : 'When a customer requests a quote or books an alteration on the web store, it will appear here in real time.'}
                       </p>
                     </div>
                   </td>
