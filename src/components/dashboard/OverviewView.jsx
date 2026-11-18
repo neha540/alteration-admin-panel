@@ -213,8 +213,20 @@ export default function OverviewView({ onNavigateTab }) {
             </button>
           </div>
 
-          {/* Applications List */}
-          {pendingStudios.length === 0 ? (
+          {/* Applications List or Skeleton or Empty State */}
+          {isLoading && studios.length === 0 ? (
+            <div className="divide-y divide-slate-100 animate-pulse">
+              {[1, 2].map(k => (
+                <div key={k} className="py-4 flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-200 rounded w-40" />
+                    <div className="h-3 bg-slate-100 rounded w-28" />
+                  </div>
+                  <div className="h-8 bg-slate-100 rounded-lg w-20" />
+                </div>
+              ))}
+            </div>
+          ) : pendingStudios.length === 0 ? (
             <div className="py-10 text-center space-y-2">
               <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
                 <Check className="w-5 h-5 stroke-[2.5]" />

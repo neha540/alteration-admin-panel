@@ -198,8 +198,43 @@ export default function CustomersView() {
           </div>
         </div>
 
-        {/* Table or Empty State */}
-        {filteredCustomers.length === 0 ? (
+        {/* Table or Loading Skeletons or Empty State */}
+        {isLoading ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="py-3.5 px-6">CUSTOMER</th>
+                  <th className="py-3.5 px-6">ORDERS</th>
+                  <th className="py-3.5 px-6">STUDIOS VISITED</th>
+                  <th className="py-3.5 px-6">PAID ORDER VALUE</th>
+                  <th className="py-3.5 px-6">ACTIVE ORDERS</th>
+                  <th className="py-3.5 px-6 text-right">DETAILS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {[1, 2, 3, 4].map((k) => (
+                  <tr key={k} className="animate-pulse">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
+                        <div className="space-y-1.5">
+                          <div className="h-4 bg-slate-200 rounded w-32" />
+                          <div className="h-3 bg-slate-100 rounded w-24" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6"><div className="h-4 bg-slate-200 rounded w-8" /></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-slate-200 rounded w-8" /></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-slate-200 rounded w-16" /></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-slate-200 rounded w-8" /></td>
+                    <td className="py-4 px-6 text-right"><div className="h-7 bg-slate-100 rounded-lg w-16 ml-auto" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : filteredCustomers.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-center text-slate-400 mb-3 mx-auto">
               <Users className="w-5 h-5" />

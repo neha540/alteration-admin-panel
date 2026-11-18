@@ -246,7 +246,18 @@ export default function FaqsView() {
 
         {/* FAQs List Table / Cards */}
         {loading ? (
-          <div className="py-16 text-center text-xs text-slate-400">Loading questions...</div>
+          <div className="divide-y divide-slate-100 animate-pulse">
+            {[1, 2, 3, 4].map(k => (
+              <div key={k} className="p-5 space-y-2.5">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 bg-slate-200 rounded w-10" />
+                  <div className="h-4 bg-slate-200 rounded w-2/3" />
+                  <div className="h-4 bg-slate-100 rounded-md w-16 ml-auto" />
+                </div>
+                <div className="h-3 bg-slate-100 rounded w-1/2 ml-13" />
+              </div>
+            ))}
+          </div>
         ) : filteredFaqs.length === 0 ? (
           <div className="py-16 text-center space-y-2">
             <HelpCircle className="w-10 h-10 text-slate-300 mx-auto stroke-[1.5]" />
