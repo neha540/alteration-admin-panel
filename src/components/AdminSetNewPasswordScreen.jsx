@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { adminAuthService } from '../services/adminAuthService';
 
 export default function AdminSetNewPasswordScreen({ 
@@ -23,8 +23,8 @@ export default function AdminSetNewPasswordScreen({
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters.');
       return;
     }
 
@@ -60,8 +60,9 @@ export default function AdminSetNewPasswordScreen({
       </div>
 
       {error && (
-        <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs">
-          {error}
+        <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -82,6 +83,7 @@ export default function AdminSetNewPasswordScreen({
               }}
               placeholder="Enter password"
               required
+              minLength={12}
               className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-xs sm:text-sm text-slate-900 transition shadow-2xs placeholder:text-slate-400 bg-white"
             />
             <button
@@ -93,6 +95,10 @@ export default function AdminSetNewPasswordScreen({
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          {/* Helper note */}
+          <p className="text-[11.5px] text-slate-500 mt-1.5">
+            Use at least 12 characters. Avoid reusing a password.
+          </p>
         </div>
 
         {/* Confirm new password */}
@@ -110,6 +116,7 @@ export default function AdminSetNewPasswordScreen({
               }}
               placeholder="Enter password"
               required
+              minLength={12}
               className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-xs sm:text-sm text-slate-900 transition shadow-2xs placeholder:text-slate-400 bg-white"
             />
             <button

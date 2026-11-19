@@ -168,26 +168,24 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
         className="w-64 xl:w-72 text-white shrink-0 flex flex-col justify-between p-5 select-none h-screen sticky top-0 overflow-y-auto no-scrollbar"
       >
         <div>
-          {/* Brand Logo & Admin Heading */}
+          {/* Brand Logo & Operations Header */}
           <div className="pb-5 border-b border-slate-700/50">
-            <div className="flex items-center gap-2.5">
-              <div className="bg-white rounded-lg p-1.5 inline-flex items-center justify-center">
-                <AdminLogo className="h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-white text-sm tracking-tight block leading-tight">
-                  Alteration Connect
-                </span>
-                <span className="text-[9.5px] font-bold text-slate-400 tracking-[0.16em] uppercase block mt-0.5">
-                  ADMIN
-                </span>
-              </div>
+            {/* Transparent Brand Logo Image */}
+            <div className="flex items-center">
+              <AdminLogo className="h-9 sm:h-10" />
+            </div>
+
+            {/* Platform Admin Tag */}
+            <div className="mt-4">
+              <span className="text-[10.5px] font-bold text-slate-400 tracking-[0.2em] uppercase block">
+                PLATFORM ADMIN
+              </span>
             </div>
 
             {/* Operations Status indicator */}
-            <div className="mt-4 flex items-center gap-2 text-xs text-slate-300">
+            <div className="mt-3.5 flex items-center gap-2 text-xs text-slate-300">
               <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
-              <span className="font-medium text-[12px]">Network operations</span>
+              <span className="font-medium text-[12px] text-slate-300">Network operations</span>
             </div>
           </div>
 

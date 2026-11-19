@@ -13,7 +13,7 @@ export default function AdminAuthLayout({
       
       {/* ==================== LEFT DEEP NAVY PANEL (STICK TO LEFT) ==================== */}
       <aside 
-        style={{ backgroundColor: '#172A45' }}
+        style={{ backgroundColor: '#172B49' }}
         className="w-full lg:w-[440px] xl:w-[480px] text-white flex flex-col justify-between p-6 sm:p-10 lg:p-14 select-none shrink-0 min-h-screen relative overflow-hidden"
       >
         {/* Subtle decorative glow */}
@@ -36,11 +36,11 @@ export default function AdminAuthLayout({
             Manage studio access, approvals and customer support in one secure workspace.
           </p>
 
-          {/* Stepper Indicators matching design */}
+          {/* 3 Teal Dashes Indicator */}
           <div className="flex items-center gap-2 pt-4">
-            <span className="h-[3.5px] w-6 rounded-full bg-[#14B8A6] transition-all duration-300" />
-            <span className="h-[3.5px] w-5 rounded-full bg-[#1E3A4D] transition-all duration-300" />
-            <span className="h-[3.5px] w-5 rounded-full bg-[#1E3A4D] transition-all duration-300" />
+            <span className="w-6 h-1 rounded-full bg-[#087F83]" />
+            <span className="w-6 h-1 rounded-full bg-[#087F83]" />
+            <span className="w-6 h-1 rounded-full bg-[#087F83]" />
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function AdminAuthLayout({
       <main className="flex-1 bg-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 min-h-screen overflow-y-auto">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between pb-4">
-          {showBackButton ? (
+          {showBackButton && onBack ? (
             <button
               type="button"
               onClick={onBack}

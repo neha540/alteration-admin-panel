@@ -22,8 +22,8 @@ export default function AdminActivateAccountScreen({
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters.');
       return;
     }
 
@@ -122,6 +122,7 @@ export default function AdminActivateAccountScreen({
               }}
               placeholder="Create a password"
               required
+              minLength={12}
               className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-xs sm:text-sm text-slate-900 transition shadow-2xs placeholder:text-slate-400 bg-white"
             />
             <button
@@ -139,7 +140,7 @@ export default function AdminActivateAccountScreen({
           </div>
           {/* Helper note */}
           <p className="text-[11.5px] text-slate-500 mt-1.5">
-            Use at least 8 characters. Avoid reusing a password.
+            Use at least 12 characters. Avoid reusing a password.
           </p>
         </div>
 

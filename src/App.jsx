@@ -132,8 +132,8 @@ export default function App() {
 
   return (
     <AdminAuthLayout 
-      onBack={handleBack}
-      showBackButton={true}
+      onBack={currentScreen === 'sign-in' ? null : handleBack}
+      showBackButton={currentScreen !== 'sign-in' && currentScreen !== 'sign-in-error'}
       backText="Back"
     >
       {/* 01 · Access / Sign in */}

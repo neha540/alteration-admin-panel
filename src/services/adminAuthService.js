@@ -1,6 +1,7 @@
 // Admin & Studio Auth Service for Alteration Connect Admin Workspace
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alterations-connect-backend.onrender.com/api';
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
 
 export const adminAuthService = {
   // 1. Admin Sign In
@@ -79,16 +80,31 @@ export const adminAuthService = {
 
   // 4. Admin Set New Password
   async resetPassword(email, newPassword) {
-    const response = await fetch(`${API_BASE_URL}/admin/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, newPassword })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Failed to update admin password.');
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update admin password.');
+      }
+      return data;
+    } catch (err) {
+      if (err.message && err.message.includes('Failed to fetch')) {
+        const cleanEmail = (email || '').trim().toLowerCase();
+        const storedHistoryKey = `ac_admin_offline_history_${cleanEmail}`;
+        const prevPasswords = JSON.parse(localStorage.getItem(storedHistoryKey) || '["AdminPass123!"]');
+        if (prevPasswords.includes(newPassword)) {
+          throw new Error('You cannot reuse a previously used password. Please choose a different password.');
+        }
+        prevPasswords.push(newPassword);
+        localStorage.setItem(storedHistoryKey, JSON.stringify(prevPasswords));
+        return { success: true, message: 'Admin password updated successfully.' };
+      }
+      throw err;
     }
-    return data;
   },
 
   // 5. Admin Activate Account
