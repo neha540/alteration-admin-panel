@@ -3,12 +3,15 @@ import { adminDataService } from '../../services/adminDataService';
 import { Scissors, Clock, CheckCircle2, Ticket, Mail, User, AlertCircle, RefreshCw } from 'lucide-react';
 import SupportTicketModal from './SupportTicketModal';
 
-export default function ActivitySupportView() {
+export default function ActivitySupportView({ networkSettings }) {
   const [activeTab, setActiveTab] = useState('support'); // 'support' | 'activity'
   const [inboxFilter, setInboxFilter] = useState('open'); // 'open' | 'resolved' | 'all'
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [liveTickets, setLiveTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const activeSpacing = networkSettings?.studioSpacing || '5';
+  const activeFee = networkSettings?.membershipFee || '200';
 
   const fetchTickets = () => {
     adminDataService.getSupportTickets().then(data => {
@@ -51,8 +54,8 @@ export default function ActivitySupportView() {
   const activityLogs = [
     { id: 1, action: 'Studio application submitted', detail: 'Round Rock Stitch applied for Austin territory', time: 'Today, 10:24 AM' },
     { id: 2, action: 'Order quote accepted', detail: 'Trouser hem & waist adjustment by Alexandra Morgan', time: 'Yesterday, 3:45 PM' },
-    { id: 3, action: 'Territory spacing audit passed', detail: '5.0-mile minimum rule verified for 4 live studios', time: 'Nov 02, 2026' },
-    { id: 4, action: 'Membership fee recorded', detail: '$200 paid by The Modern Hem', time: 'Nov 01, 2026' }
+    { id: 3, action: 'Territory spacing audit passed', detail: `${parseFloat(activeSpacing).toFixed(1)}-mile minimum rule verified for 4 live studios`, time: 'Nov 02, 2026' },
+    { id: 4, action: 'Membership fee recorded', detail: `$${activeFee} paid by The Modern Hem`, time: 'Nov 01, 2026' }
   ];
 
   return (

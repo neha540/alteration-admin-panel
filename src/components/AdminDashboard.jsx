@@ -328,16 +328,16 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
 
         {/* Dynamic View Content Slot */}
         <main className="flex-1 p-6 sm:p-10">
-          {activeNav === 'overview' && <OverviewView onNavigateTab={setActiveNav} />}
-          {activeNav === 'studios' && <StudiosView />}
-          {activeNav === 'orders' && <OrdersView />}
-          {activeNav === 'territories' && <TerritoriesView />}
-          {activeNav === 'subscriptions' && <SubscriptionsView />}
-          {activeNav === 'customers' && <CustomersView />}
-          {activeNav === 'reviews' && <ReviewsView />}
-          {activeNav === 'faqs' && <FaqsView />}
-          {activeNav === 'activity' && <ActivitySupportView />}
-          {activeNav === 'settings' && <NetworkSettingsView />}
+          {activeNav === 'overview' && <OverviewView onNavigateTab={setActiveNav} networkSettings={networkSettings} />}
+          {activeNav === 'studios' && <StudiosView networkSettings={networkSettings} />}
+          {activeNav === 'orders' && <OrdersView networkSettings={networkSettings} />}
+          {activeNav === 'territories' && <TerritoriesView networkSettings={networkSettings} />}
+          {activeNav === 'subscriptions' && <SubscriptionsView networkSettings={networkSettings} />}
+          {activeNav === 'customers' && <CustomersView networkSettings={networkSettings} />}
+          {activeNav === 'reviews' && <ReviewsView networkSettings={networkSettings} />}
+          {activeNav === 'faqs' && <FaqsView networkSettings={networkSettings} />}
+          {activeNav === 'activity' && <ActivitySupportView networkSettings={networkSettings} />}
+          {activeNav === 'settings' && <NetworkSettingsView networkSettings={networkSettings} />}
         </main>
 
         {/* Bottom Footer */}
@@ -368,9 +368,29 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
       {/* Screen 21: Pending studio application */}
       {activeModal === '21-pending' && (
         <StudioReviewModal
-          studio={{ name: 'Round Rock Stitch', status: 'In review', initials: 'RS', reviewStatus: 'In review' }}
+          studio={{ 
+            name: 'Round Rock Stitch', 
+            status: 'In review', 
+            initials: 'RS', 
+            reviewStatus: 'In review',
+            tagline: 'A closer fit for Round Rock.',
+            owner: 'Emma Hayes',
+            email: 'emma@roundrockstitch.example',
+            phone: '(512) 555-0189',
+            address: '32 Needle Park',
+            city: 'Round Rock',
+            state: 'TX',
+            zip: '78664',
+            specialties: ['Everyday', 'Repairs'],
+            about: 'A new neighborhood alteration studio applying to join the network.',
+            distanceText: '8.18 miles to Northline Tailoring',
+            membershipPaid: false,
+            paymentStatus: 'unpaid',
+            membership: 'Payment required'
+          }}
           onClose={() => setActiveModal(null)}
           onApprove={() => setActiveModal('29-approved')}
+          onDecline={() => setActiveModal(null)}
           onGrantWaiver={() => alert("Pilot waiver granted.")}
         />
       )}
@@ -378,9 +398,29 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
       {/* Screen 22: Application with territory conflict */}
       {activeModal === '22-conflict' && (
         <StudioReviewModal
-          studio={{ name: 'Congress Clothing Care', status: 'In review', initials: 'CC', hasConflict: true }}
+          studio={{ 
+            name: 'Congress Clothing Care', 
+            status: 'In review', 
+            initials: 'CC', 
+            hasConflict: true,
+            tagline: 'Local care for your wardrobe.',
+            owner: 'Noah Ellis',
+            email: 'noah@congresscare.example',
+            phone: '(512) 555-0193',
+            address: '16 Button Street',
+            city: 'South Congress',
+            state: 'TX',
+            zip: '78704',
+            specialties: ['Everyday'],
+            about: 'A new applicant awaiting vetting and territory review.',
+            distanceText: '2.10 miles to The Modern Hem',
+            membershipPaid: false,
+            paymentStatus: 'unpaid',
+            membership: 'Payment required'
+          }}
           onClose={() => setActiveModal(null)}
           onApprove={() => setActiveModal('29-approved')}
+          onDecline={() => setActiveModal(null)}
           onGrantWaiver={() => alert("Pilot waiver granted.")}
         />
       )}

@@ -1,204 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
-import { Search, Plus, Eye, Check, Upload, X, Image as ImageIcon, Crop, Trash2 } from 'lucide-react';
-import ImageCropZoomModal from '../common/ImageCropZoomModal';
+import { Search, Plus, Eye, Check, X, Building2 } from 'lucide-react';
+import { formatStudioLocation } from '../../utils/locationHelper';
+import StudioRegistrationModal from '../modals/StudioRegistrationModal';
 import StudioReviewModal from './StudioReviewModal';
 import StudioApprovedScreen from './StudioApprovedScreen';
+import StudioProfilePreviewModal from './StudioProfilePreviewModal';
 
-export default function StudiosView() {
+export default function StudiosView({ networkSettings }) {
   const [filterTab, setFilterTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
-  const [registerError, setRegisterError] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [activeReviewStudio, setActiveReviewStudio] = useState(null);
+  const [activePreviewStudio, setActivePreviewStudio] = useState(null);
   const [approvedConfirmationData, setApprovedConfirmationData] = useState(null);
-  const [liveStudios, setLiveStudios] = useState(null);
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [liveStudios, setLiveStudios] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  const [adminCropModalOpen, setAdminCropModalOpen] = useState(false);
-  const [adminRawImage, setAdminRawImage] = useState('');
-  const [isAdminDraggingOver, setIsAdminDraggingOver] = useState(false);
-  const adminFileInputRef = React.useRef(null);
-  const [newStudioForm, setNewStudioForm] = useState({
-    studioName: '',
-    ownerName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    specialties: ['Everyday'],
-    startingPrice: '',
-    turnaround: '2–3 business days',
-    hours: 'Mon–Sat 9:30 AM – 7:30 PM',
-    image: '',
-    bio: ''
-  });
-
-  const defaultAdminServices = [
-    { id: 1, name: '', price: '' }
-  ];
-  const [adminServices, setAdminServices] = useState(defaultAdminServices);
-
-  const handleAddAdminService = () => {
-    const newId = adminServices.length > 0 ? Math.max(...adminServices.map(s => s.id || 0)) + 1 : 1;
-    setAdminServices([...adminServices, { id: newId, name: '', price: '' }]);
-  };
-
-  const handleRemoveAdminService = (id) => {
-    if (adminServices.length <= 1) return;
-    setAdminServices(adminServices.filter(s => s.id !== id));
-  };
-
-  const handleUpdateAdminService = (id, field, value) => {
-    setAdminServices(adminServices.map(s => s.id === id ? { ...s, [field]: value } : s));
-  };
-
-  const validAdminServices = adminServices
-    .filter(s => s.name && s.name.trim())
-    .map(s => ({
-      id: s.id,
-      name: s.name.trim(),
-      price: String(s.price || '').replace(/\D/g, '')
-    }));
-
-  const numericAdminPrices = validAdminServices
-    .map(s => Number(s.price))
-    .filter(p => !isNaN(p) && p > 0);
-  const minAdminStartingPrice = numericAdminPrices.length > 0
-    ? `$${Math.min(...numericAdminPrices)}`
-    : (newStudioForm.startingPrice ? `$${newStudioForm.startingPrice.replace(/\D/g, '')}` : '');
-
-  const availableSpecialties = [
-    'Everyday',
-    'Suiting & Formalwear',
-    'Denim & Casual',
-    'Bridal & Delicate',
-    'Leather & Outerwear',
-    'Repairs & Restorations'
-  ];
-
-  const handleToggleSpecialty = (spec) => {
-    setNewStudioForm(prev => {
-      const exists = prev.specialties.includes(spec);
-      const next = exists 
-        ? prev.specialties.filter(s => s !== spec)
-        : [...prev.specialties, spec];
-      return { ...prev, specialties: next.length > 0 ? next : ['Everyday'] };
-    });
-  };
-
-  const handleImageFile = (file) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAdminRawImage(reader.result);
-        setAdminCropModalOpen(true);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
-  };
 
   const fetchStudios = () => {
     adminDataService.getStudios().then(data => {
-      if (data && Array.isArray(data)) {
+      if (Array.isArray(data)) {
         setLiveStudios(data);
         window.dispatchEvent(new Event('admin_studios_updated'));
+      } else {
+        setLiveStudios([]);
       }
     }).catch((err) => {
       console.warn('Failed to load studios:', err);
+      setLiveStudios([]);
+    }).finally(() => {
+      setIsLoading(false);
     });
   };
 
   useEffect(() => {
     fetchStudios();
+    const interval = setInterval(fetchStudios, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [filterTab, searchQuery]);
-
-  // Handle Admin registration directly to backend
-  const handleAdminRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setRegisterError('');
-    if (!newStudioForm.studioName.trim()) {
-      setRegisterError('Studio name is required.');
-      return;
-    }
-    if (!newStudioForm.image || !newStudioForm.image.trim()) {
-      setRegisterError('Studio storefront or workspace photo is required. Please upload an image or provide an image URL.');
-      return;
-    }
-    setIsRegistering(true);
-    try {
-      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const apiBase = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
-      
-      const cityState = [newStudioForm.city.trim(), newStudioForm.state.trim()].filter(Boolean).join(', ');
-      const res = await fetch(`${apiBase}/studios/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newStudioForm.studioName.trim(),
-          owner: newStudioForm.ownerName.trim() || 'Owner',
-          email: newStudioForm.email.trim() || `${newStudioForm.studioName.toLowerCase().replace(/[^a-z0-9]/g, '')}@studio.example`,
-          phone: newStudioForm.phone.trim() || '+1 (512) 555-0100',
-          address: newStudioForm.address.trim() || cityState || 'Austin, TX',
-          city: newStudioForm.city.trim() || 'Austin',
-          state: newStudioForm.state.trim() || 'TX',
-          zip: newStudioForm.zip.trim() || '78701',
-          specialties: newStudioForm.specialties,
-          services: validAdminServices.length > 0 ? validAdminServices : defaultAdminServices,
-          startingPrice: minAdminStartingPrice,
-          turnaround: newStudioForm.turnaround.trim() || '2–3 business days',
-          hours: newStudioForm.hours.trim() || 'Mon–Sat 9:30 AM – 7:30 PM',
-          image: newStudioForm.image.trim(),
-          bio: newStudioForm.bio.trim() || ''
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setRegisterError(data.message || 'Failed to register studio. Please check details.');
-        return;
-      }
-      setRegisterModalOpen(false);
-      setToastMessage(`Studio "${newStudioForm.studioName.trim()}" registered successfully!`);
-      setTimeout(() => setToastMessage(''), 5000);
-      setNewStudioForm({
-        studioName: '',
-        ownerName: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-        specialties: ['Everyday'],
-        startingPrice: '25',
-        turnaround: '2–3 business days',
-        hours: 'Mon–Sat 9:30 AM – 7:30 PM',
-        image: '',
-        bio: ''
-      });
-      fetchStudios();
-    } catch (err) {
-      console.warn('Error registering studio:', err);
-      setRegisterError(err.message || 'Failed to register studio.');
-    } finally {
-      setIsRegistering(false);
-    }
-  };
 
   // Map live studios from backend into UI shape
   const currentStudios = (liveStudios || []).map(s => {
@@ -208,7 +54,7 @@ export default function StudiosView() {
       id: s.id,
       name: s.name,
       owner: s.owner || 'Owner',
-      initials: s.initials || (s.name ? s.name.split(' ').map(n=>n[0]).join('').slice(0, 2).toUpperCase() : 'ST'),
+      initials: s.initials || (s.name ? s.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'ST'),
       avatarBg: s.bgTeal ? 'bg-[#F5EFE6] text-[#78593C]' : 'bg-slate-100 text-slate-700',
       city: s.city || '',
       zip: s.zip || ((s.address && s.address.match(/\b\d{5,6}\b/)) ? s.address.match(/\b\d{5,6}\b/)[0] : (s.city && s.city.match(/\b\d{5,6}\b/) ? s.city.match(/\b\d{5,6}\b/)[0] : '')),
@@ -217,16 +63,16 @@ export default function StudiosView() {
       hours: s.hours,
       image: s.image,
       reviewStatus: s.status || 'In review',
-      reviewColor: isApproved 
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+      reviewColor: isApproved
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
         : isSuspended
-        ? 'bg-rose-50 text-rose-700 border-rose-200/80'
-        : 'bg-amber-50 text-amber-700 border-amber-200/80',
+          ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+          : 'bg-amber-50 text-amber-700 border-amber-200/80',
       membership: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
         ? `Paid (${s.paidAmount ? '$' + s.paidAmount : '$200'})`
         : 'Not paid',
       membershipColor: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
         : 'bg-rose-50 text-rose-700 border-rose-200/80 font-bold',
       listing: isApproved ? 'Live' : 'Hidden',
       listingColor: isApproved ? 'text-emerald-600' : 'text-slate-400',
@@ -282,10 +128,7 @@ export default function StudiosView() {
 
         <button
           type="button"
-          onClick={() => {
-            setRegisterError('');
-            setRegisterModalOpen(true);
-          }}
+          onClick={() => setRegisterModalOpen(true)}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 stroke-[2.2]" />
@@ -295,7 +138,7 @@ export default function StudiosView() {
 
       {/* Main Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden">
-        
+
         {/* Card Header & Search */}
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -324,11 +167,10 @@ export default function StudiosView() {
           <button
             type="button"
             onClick={() => setFilterTab('all')}
-            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              filterTab === 'all'
+            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${filterTab === 'all'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <span>All studios</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'}`}>
@@ -339,11 +181,10 @@ export default function StudiosView() {
           <button
             type="button"
             onClick={() => setFilterTab('awaiting')}
-            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              filterTab === 'awaiting'
+            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${filterTab === 'awaiting'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <span>Awaiting review</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'awaiting' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
@@ -354,11 +195,10 @@ export default function StudiosView() {
           <button
             type="button"
             onClick={() => setFilterTab('approved')}
-            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              filterTab === 'approved'
+            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${filterTab === 'approved'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <span>Approved</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
@@ -369,11 +209,10 @@ export default function StudiosView() {
           <button
             type="button"
             onClick={() => setFilterTab('declined')}
-            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              filterTab === 'declined'
+            className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${filterTab === 'declined'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <span>Paused / declined</span>
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${filterTab === 'declined' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-600'}`}>
@@ -396,7 +235,7 @@ export default function StudiosView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {liveStudios === null ? (
+              {isLoading && liveStudios.length === 0 ? (
                 [1, 2, 3, 4].map((k) => (
                   <tr key={k} className="animate-pulse">
                     <td className="py-4 px-6">
@@ -429,17 +268,48 @@ export default function StudiosView() {
               ) : filteredStudios.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-14 text-center">
-                    <div className="max-w-sm mx-auto space-y-2">
-                      <p className="text-slate-700 font-semibold text-sm">
-                        {allCount === 0 
-                          ? 'No studios registered yet' 
-                          : `No studios found in "${filterTab === 'all' ? 'All studios' : filterTab === 'awaiting' ? 'Awaiting review' : filterTab === 'approved' ? 'Approved' : 'Paused / declined'}"`}
-                      </p>
-                      <p className="text-slate-400 text-xs leading-relaxed">
-                        {allCount === 0
-                          ? 'When a tailor or business submits a registration on the customer site, it will show up here under "Awaiting review" for your approval.'
-                          : 'Try selecting another tab or clearing your search query.'}
-                      </p>
+                    <div className="max-w-md mx-auto flex flex-col items-center justify-center space-y-3 px-4">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-400">
+                        <Building2 className="w-6 h-6 stroke-[1.5]" />
+                      </div>
+                      <div className="space-y-1 text-center">
+                        <p className="text-slate-800 font-bold text-sm">
+                          {allCount === 0
+                            ? 'No studios registered yet'
+                            : `No studios found in "${filterTab === 'all' ? 'All studios' : filterTab === 'awaiting' ? 'Awaiting review' : filterTab === 'approved' ? 'Approved' : 'Paused / declined'}"`}
+                        </p>
+                        <p className="text-slate-500 text-xs leading-relaxed max-w-sm">
+                          {allCount === 0
+                            ? 'There are currently no tailoring or alteration studios registered in the network. You can register one directly or wait for businesses to apply.'
+                            : (searchQuery ? `No studios match "${searchQuery}". Try clearing your search query.` : 'Try selecting another tab or clearing your filters.')}
+                        </p>
+                      </div>
+                      {allCount === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterError('');
+                            setRegisterModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer mt-1"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <span>Register a studio</span>
+                        </button>
+                      ) : (
+                        (searchQuery || filterTab !== 'all') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery('');
+                              setFilterTab('all');
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer mt-1"
+                          >
+                            <span>Clear filters</span>
+                          </button>
+                        )
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -473,8 +343,15 @@ export default function StudiosView() {
 
                     {/* Location */}
                     <td className="py-4 px-6 text-slate-700">
-                      <span className="block font-medium">{s.city}</span>
-                      <span className="text-[11px] text-slate-400 block">{s.zip}</span>
+                      {(() => {
+                        const loc = formatStudioLocation(s);
+                        return (
+                          <>
+                            <span className="block font-medium text-slate-800">{loc.primary}</span>
+                            <span className="text-[11px] text-slate-400 block">{loc.secondary}</span>
+                          </>
+                        );
+                      })()}
                     </td>
 
                     {/* Review Status */}
@@ -510,9 +387,9 @@ export default function StudiosView() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setActiveReviewStudio(s)}
+                          onClick={() => setActivePreviewStudio(s)}
                           className="p-1.5 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                          title="View details"
+                          title="Preview profile"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -528,7 +405,10 @@ export default function StudiosView() {
         {/* Card Footer with Pagination */}
         <div className="p-4 sm:px-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <span>
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredStudios.length)} of {filteredStudios.length} studios ({allCount} total)
+            {filteredStudios.length === 0
+              ? 'Showing 0 studios (0 total)'
+              : `Showing ${(currentPage - 1) * itemsPerPage + 1} to ${Math.min(currentPage * itemsPerPage, filteredStudios.length)} of ${filteredStudios.length} studios (${allCount} total)`
+            }
           </span>
           {filteredStudios.length > itemsPerPage && (
             <div className="flex items-center gap-1.5">
@@ -557,418 +437,23 @@ export default function StudiosView() {
 
       </div>
 
-      {/* Modal to Register a studio from Admin with full details */}
-      {registerModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form
-            onSubmit={handleAdminRegisterSubmit}
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-4 my-8 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  Register a new alteration studio
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Enter complete business, owner, location, and service details.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setRegisterModalOpen(false)}
-                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4 pt-1">
-              {registerError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3.5 py-2.5 rounded-lg text-xs font-medium">
-                  {registerError}
-                </div>
-              )}
-
-              {/* Studio & Owner Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Studio name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newStudioForm.studioName}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, studioName: e.target.value })}
-                    placeholder="e.g. Austin Tailor Studio"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Owner full name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newStudioForm.ownerName}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, ownerName: e.target.value.replace(/[^a-zA-Z\s.\-']/g, '') })}
-                    placeholder="e.g. Rachel Adams"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-              </div>
-
-              {/* Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    value={newStudioForm.email}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, email: e.target.value })}
-                    placeholder="contact@austinstudio.com"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Phone number
-                  </label>
-                  <input
-                    type="tel"
-                    value={newStudioForm.phone}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, phone: e.target.value.replace(/[^0-9+\-()\s]/g, '') })}
-                    placeholder="+1 (512) 555-0199"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-              </div>
-
-              {/* Street Address */}
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1">
-                  Street address
-                </label>
-                <input
-                  type="text"
-                  value={newStudioForm.address}
-                  onChange={(e) => setNewStudioForm({ ...newStudioForm, address: e.target.value })}
-                  placeholder="e.g. 1024 Congress Avenue, Suite 300"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-
-              {/* City, State, ZIP */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={newStudioForm.city}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, city: e.target.value.replace(/[^a-zA-Z\s,.\-']/g, '') })}
-                    placeholder="e.g. Austin"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={newStudioForm.state}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, state: e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 2).toUpperCase() })}
-                    placeholder="e.g. TX"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Postal / ZIP code
-                  </label>
-                  <input
-                    type="text"
-                    value={newStudioForm.zip}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, zip: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                    placeholder="e.g. 78701"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                  />
-                </div>
-              </div>
-
-              {/* Specialties */}
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1.5">
-                  Specialties (select all that apply)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {availableSpecialties.map((spec) => {
-                    const isSelected = newStudioForm.specialties.includes(spec);
-                    return (
-                      <button
-                        key={spec}
-                        type="button"
-                        onClick={() => handleToggleSpecialty(spec)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
-                          isSelected
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                        }`}
-                      >
-                        {spec}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Turnaround & Operating hours */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Turnaround time
-                  </label>
-                  <select
-                    value={newStudioForm.turnaround}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, turnaround: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white cursor-pointer"
-                  >
-                    <option value="1–2 business days">1–2 business days (Express)</option>
-                    <option value="2–3 business days">2–3 business days (Standard)</option>
-                    <option value="3–5 business days">3–5 business days</option>
-                    <option value="5–7 business days">5–7 business days (1 week)</option>
-                    <option value="1–2 weeks">1–2 weeks</option>
-                    <option value="2–3 weeks">2–3 weeks (Bridal & Complex)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-800 block mb-1">
-                    Operating hours
-                  </label>
-                  <select
-                    value={newStudioForm.hours}
-                    onChange={(e) => setNewStudioForm({ ...newStudioForm, hours: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white cursor-pointer"
-                  >
-                    <option value="Mon–Sat 9:30 AM – 7:30 PM">Mon–Sat 9:30 AM – 7:30 PM</option>
-                    <option value="Mon–Fri 9:00 AM – 6:00 PM">Mon–Fri 9:00 AM – 6:00 PM</option>
-                    <option value="Mon–Sat 10:00 AM – 7:00 PM">Mon–Sat 10:00 AM – 7:00 PM</option>
-                    <option value="Tue–Sat 10:00 AM – 6:00 PM">Tue–Sat 10:00 AM – 6:00 PM</option>
-                    <option value="Mon–Sun 10:00 AM – 8:00 PM">Mon–Sun 10:00 AM – 8:00 PM</option>
-                    <option value="By Appointment Only">By Appointment Only</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Services & Starting prices */}
-              <div className="space-y-2.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-800 block">
-                      Services & starting prices
-                    </label>
-                    <p className="text-[11px] text-slate-500">
-                      Lowest service price automatically sets studio starting price.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddAdminService}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition cursor-pointer px-2.5 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add service</span>
-                  </button>
-                </div>
-
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-200">
-                  {adminServices.map((srv, idx) => (
-                    <div key={srv.id || idx} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-7">
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
-                          Service name
-                        </label>
-                        <input
-                          type="text"
-                          value={srv.name}
-                          onChange={(e) => handleUpdateAdminService(srv.id, 'name', e.target.value)}
-                          placeholder="e.g. Trouser hemming"
-                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-blue-600 transition"
-                        />
-                      </div>
-                      <div className="col-span-4">
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
-                          Price ($)
-                        </label>
-                        <div className="relative flex items-center">
-                          <span className="absolute left-2 text-slate-400 font-bold text-xs select-none pointer-events-none">$</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={srv.price}
-                            onChange={(e) => handleUpdateAdminService(srv.id, 'price', e.target.value.replace(/\D/g, ''))}
-                            placeholder="20"
-                            className="w-full pl-5 pr-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 bg-white focus:outline-none focus:border-blue-600 transition"
-                          />
-                        </div>
-                      </div>
-                      <div className="col-span-1 flex items-end justify-center pt-3.5">
-                        {adminServices.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAdminService(srv.id)}
-                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                            title="Remove service"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/80 text-xs text-slate-600 font-medium">
-                    <span>Studio starting price badge:</span>
-                    <span className="font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded text-[11px] border border-blue-200">
-                      {minAdminStartingPrice || 'Set by service price'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Image Upload / Preview with Drag & Drop and Zoom/Crop */}
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1.5">
-                  Studio storefront image <span className="text-rose-500 font-bold">* (Required)</span>
-                </label>
-                {newStudioForm.image ? (
-                  <div className="relative rounded-xl overflow-hidden border border-slate-200 aspect-[16/9] max-h-48 bg-slate-900 group shadow-2xs">
-                    <img src={newStudioForm.image} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAdminRawImage(newStudioForm.image);
-                          setAdminCropModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Crop className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Edit & Zoom</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => adminFileInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-slate-600" />
-                        <span>Replace</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewStudioForm({ ...newStudioForm, image: '' })}
-                        className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition cursor-pointer"
-                        title="Remove photo"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsAdminDraggingOver(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setIsAdminDraggingOver(false);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsAdminDraggingOver(false);
-                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        setRegisterError('');
-                        handleImageFile(e.dataTransfer.files[0]);
-                      }
-                    }}
-                    onClick={() => adminFileInputRef.current?.click()}
-                    className={`border-2 border-dashed ${
-                      isAdminDraggingOver
-                        ? 'border-blue-600 bg-blue-50/60 scale-[1.01]'
-                        : registerError && !newStudioForm.image
-                        ? 'border-rose-400 bg-rose-50/30'
-                        : 'border-slate-200 hover:border-blue-400 bg-slate-50/60 hover:bg-blue-50/20'
-                    } rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center group`}
-                  >
-                    <div className="w-9 h-9 rounded-full bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center transition mb-1.5">
-                      <Upload className="w-4 h-4" />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-800">
-                      {isAdminDraggingOver ? 'Drop photo here' : 'Click to upload photo or drag & drop'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      JPG, PNG, WEBP · Includes edit, zoom in/out & position
-                    </p>
-                  </div>
-                )}
-
-                <input
-                  ref={adminFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    setRegisterError('');
-                    handleImageUpload(e);
-                  }}
-                  className="hidden"
-                />
-              </div>
-
-              {/* Bio / Description */}
-              <div>
-                <label className="text-xs font-semibold text-slate-800 block mb-1">
-                  About the studio / biography
-                </label>
-                <textarea
-                  rows={3}
-                  value={newStudioForm.bio}
-                  onChange={(e) => setNewStudioForm({ ...newStudioForm, bio: e.target.value })}
-                  placeholder="Tell clients about your master tailoring craftsmanship, bespoke fittings, and alteration guarantees..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setRegisterModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isRegistering}
-                className="px-5 py-2 text-xs font-semibold bg-[#2361E9] hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 cursor-pointer shadow-xs"
-              >
-                {isRegistering ? 'Registering...' : 'Register studio'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Studio Registration Modal matching Web app ditto */}
+      <StudioRegistrationModal
+        isOpen={registerModalOpen}
+        onClose={() => {
+          setRegisterModalOpen(false);
+          fetchStudios();
+        }}
+        membershipFee={networkSettings?.membershipFee || '200'}
+        studioSpacing={networkSettings?.studioSpacing || '5'}
+      />
 
       {/* Studio Review Modal connected to backend APIs */}
       {activeReviewStudio && (
         <StudioReviewModal
           studio={activeReviewStudio}
+          allStudios={liveStudios}
+          networkSettings={networkSettings}
           onClose={() => setActiveReviewStudio(null)}
           onApprove={async (id) => {
             try {
@@ -988,10 +473,24 @@ export default function StudiosView() {
             }
             setActiveReviewStudio(null);
           }}
+          onDecline={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Declined');
+              fetchStudios();
+              setToastMessage(`Studio "${activeReviewStudio.name}" application declined.`);
+              setTimeout(() => setToastMessage(''), 5000);
+            } catch (err) {
+              console.warn('Failed to decline studio:', err);
+              alert('Failed to decline studio application.');
+            }
+            setActiveReviewStudio(null);
+          }}
           onSuspend={async (id) => {
             try {
               await adminDataService.updateStudioStatus(id, 'Suspended');
               fetchStudios();
+              setToastMessage(`Studio "${activeReviewStudio.name}" has been suspended.`);
+              setTimeout(() => setToastMessage(''), 5000);
             } catch (err) {
               console.warn('Failed to suspend studio:', err);
             }
@@ -1042,6 +541,15 @@ export default function StudiosView() {
         </div>
       )}
 
+      {/* In-app Studio Profile Preview Modal */}
+      {activePreviewStudio && (
+        <StudioProfilePreviewModal
+          isOpen={Boolean(activePreviewStudio)}
+          studio={activePreviewStudio}
+          onClose={() => setActivePreviewStudio(null)}
+        />
+      )}
+
       {/* Floating Status Notification Toast */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border border-slate-700">
@@ -1056,18 +564,6 @@ export default function StudiosView() {
           </button>
         </div>
       )}
-
-      {/* Admin Studio Image Crop / Zoom Modal */}
-      <ImageCropZoomModal
-        isOpen={adminCropModalOpen}
-        imageSrc={adminRawImage}
-        onClose={() => setAdminCropModalOpen(false)}
-        onSave={(croppedDataUrl) => {
-          setNewStudioForm((prev) => ({ ...prev, image: croppedDataUrl }));
-          setRegisterError('');
-        }}
-        aspectRatio={16 / 9}
-      />
     </div>
   );
 }

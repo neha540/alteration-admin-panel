@@ -12,13 +12,26 @@ import { adminDataService } from '../../services/adminDataService';
 import StudioReviewModal from './StudioReviewModal';
 import StudioApprovedScreen from './StudioApprovedScreen';
 
-export default function OverviewView({ onNavigateTab }) {
+export default function OverviewView({ onNavigateTab, networkSettings }) {
   const [studios, setStudios] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reviewModalStudio, setReviewModalStudio] = useState(null);
   const [approvedModalData, setApprovedModalData] = useState(null);
+  const [liveSettings, setLiveSettings] = useState(networkSettings || null);
+
+  useEffect(() => {
+    if (networkSettings) setLiveSettings(networkSettings);
+  }, [networkSettings]);
+
+  useEffect(() => {
+    const handleSettingsUpdated = (e) => {
+      if (e?.detail) setLiveSettings(e.detail);
+    };
+    window.addEventListener('admin_settings_updated', handleSettingsUpdated);
+    return () => window.removeEventListener('admin_settings_updated', handleSettingsUpdated);
+  }, []);
 
   // Fetch all live data dynamically
   const loadOverviewData = useCallback(async () => {
@@ -87,18 +100,21 @@ export default function OverviewView({ onNavigateTab }) {
 
   const openTickets = tickets.filter(t => t.status === 'Open' || t.status === 'open');
 
-  // $200 per active live studio
-  const monthlyRevenue = liveStudios.length * 200;
+  const currentSpacing = liveSettings?.studioSpacing || networkSettings?.studioSpacing || '5';
+  const currentFee = parseFloat(liveSettings?.membershipFee || networkSettings?.membershipFee || '200') || 200;
+  const monthlyRevenue = liveStudios.length * currentFee;
   const customersCount = customers.length;
 
   // Format helpers
   const getStudioLocation = (studio) => {
+    if (studio.address) {
+      return studio.zip ? `${studio.address} · PIN ${studio.zip}` : studio.address;
+    }
     if (studio.location) return studio.location;
-    const parts = [studio.city, studio.state].filter(Boolean).join(', ');
-    if (parts && studio.zip) return `${parts} · ${studio.zip}`;
+    const parts = [studio.city, studio.state && studio.state !== 'TX' ? studio.state : ''].filter(Boolean).join(', ');
+    if (parts && studio.zip) return `${parts} · PIN ${studio.zip}`;
     if (parts) return parts;
-    if (studio.address) return studio.address;
-    return 'Austin, TX';
+    return studio.city || 'Partner Studio';
   };
 
   const getStudioStatusText = (studio) => {
@@ -354,7 +370,7 @@ export default function OverviewView({ onNavigateTab }) {
             )}
 
             <h3 className="text-lg font-bold text-slate-900 mt-3.5">
-              5 miles minimum
+              {currentSpacing} miles minimum
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               {hasTerritoryConflict
@@ -433,8 +449,19 @@ export default function OverviewView({ onNavigateTab }) {
       {reviewModalStudio && (
         <StudioReviewModal
           studio={reviewModalStudio}
+          allStudios={studios}
+          networkSettings={liveSettings || networkSettings}
           onClose={() => setReviewModalStudio(null)}
           onApprove={() => handleApproveStudio(reviewModalStudio.id)}
+          onDecline={async (id) => {
+            try {
+              await adminDataService.updateStudioStatus(id, 'Declined');
+              loadOverviewData();
+            } catch (err) {
+              console.warn('Failed to decline studio:', err);
+            }
+            setReviewModalStudio(null);
+          }}
           onGrantWaiver={() => handleGrantWaiver(reviewModalStudio.id)}
           onSuspend={() => handleSuspendStudio(reviewModalStudio.id)}
         />

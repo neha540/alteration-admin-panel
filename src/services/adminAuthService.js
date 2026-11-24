@@ -1,7 +1,7 @@
 // Admin & Studio Auth Service for Alteration Connect Admin Workspace
-
+const LIVE_RENDER_API = 'https://alterations-connect-backend.onrender.com/api';
 const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://alterations-connect-backend.onrender.com/api');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : LIVE_RENDER_API);
 
 export const adminAuthService = {
   // 1. Admin Sign In
