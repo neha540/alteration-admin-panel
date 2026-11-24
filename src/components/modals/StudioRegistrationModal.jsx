@@ -793,7 +793,7 @@ export default function StudioRegistrationModal({
                         setFormData({ ...formData, streetAddress: e.target.value });
                         lookupCoordinates(e.target.value, formData.zipCode);
                       }}
-                      placeholder=""
+                      placeholder="e.g. 245 Lafayette St, SoHo, NY"
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-600 transition bg-white"
                     />
                   </div>
@@ -811,7 +811,7 @@ export default function StudioRegistrationModal({
                         setFormData({ ...formData, zipCode: val });
                         lookupCoordinates(formData.streetAddress, val);
                       }}
-                      placeholder=""
+                      placeholder="e.g. 10012 or 90210"
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-600 transition bg-white"
                     />
                   </div>
