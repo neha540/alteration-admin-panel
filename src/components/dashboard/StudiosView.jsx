@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminDataService } from '../../services/adminDataService';
-import { Search, Plus, Eye, Check, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Search, Plus, Eye, Check, Upload, X, Image as ImageIcon, Crop, Trash2 } from 'lucide-react';
+import ImageCropZoomModal from '../common/ImageCropZoomModal';
 import StudioReviewModal from './StudioReviewModal';
 import StudioApprovedScreen from './StudioApprovedScreen';
 
@@ -16,6 +17,10 @@ export default function StudiosView() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const [adminCropModalOpen, setAdminCropModalOpen] = useState(false);
+  const [adminRawImage, setAdminRawImage] = useState('');
+  const [isAdminDraggingOver, setIsAdminDraggingOver] = useState(false);
+  const adminFileInputRef = React.useRef(null);
   const [newStudioForm, setNewStudioForm] = useState({
     studioName: '',
     ownerName: '',
@@ -86,14 +91,21 @@ export default function StudiosView() {
     });
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
+  const handleImageFile = (file) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewStudioForm(prev => ({ ...prev, image: reader.result }));
+        setAdminRawImage(reader.result);
+        setAdminCropModalOpen(true);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageFile(file);
     }
   };
 
@@ -829,54 +841,93 @@ export default function StudiosView() {
                 </div>
               </div>
 
-              {/* Image Upload / Preview */}
+              {/* Image Upload / Preview with Drag & Drop and Zoom/Crop */}
               <div>
                 <label className="text-xs font-semibold text-slate-800 block mb-1.5">
                   Studio storefront image <span className="text-rose-500 font-bold">* (Required)</span>
                 </label>
-                <div className="flex items-center gap-3">
-                  {newStudioForm.image ? (
-                    <div className="relative w-20 h-14 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                      <img src={newStudioForm.image} alt="Preview" className="w-full h-full object-cover" />
+                {newStudioForm.image ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 aspect-[16/9] max-h-48 bg-slate-900 group shadow-2xs">
+                    <img src={newStudioForm.image} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdminRawImage(newStudioForm.image);
+                          setAdminCropModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Crop className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Edit & Zoom</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => adminFileInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Replace</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => setNewStudioForm({ ...newStudioForm, image: '' })}
-                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 hover:bg-black"
+                        className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition cursor-pointer"
+                        title="Remove photo"
                       >
-                        <X className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  ) : (
-                    <div className={`w-20 h-14 rounded-lg bg-slate-50 border border-dashed ${registerError && !newStudioForm.image ? 'border-rose-400 bg-rose-50/40 text-rose-500' : 'border-slate-300 text-slate-400'} flex items-center justify-center shrink-0`}>
-                      <ImageIcon className="w-5 h-5" />
-                    </div>
-                  )}
-                  <div className="flex-1 space-y-1.5">
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition cursor-pointer">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload image file</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => {
-                          setRegisterError('');
-                          handleImageUpload(e);
-                        }} 
-                        className="hidden" 
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      value={newStudioForm.image.startsWith('data:') ? '' : newStudioForm.image}
-                      onChange={(e) => {
-                        setRegisterError('');
-                        setNewStudioForm({ ...newStudioForm, image: e.target.value });
-                      }}
-                      placeholder="Or enter image URL..."
-                      className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-600"
-                    />
                   </div>
-                </div>
+                ) : (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsAdminDraggingOver(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsAdminDraggingOver(false);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsAdminDraggingOver(false);
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        setRegisterError('');
+                        handleImageFile(e.dataTransfer.files[0]);
+                      }
+                    }}
+                    onClick={() => adminFileInputRef.current?.click()}
+                    className={`border-2 border-dashed ${
+                      isAdminDraggingOver
+                        ? 'border-blue-600 bg-blue-50/60 scale-[1.01]'
+                        : registerError && !newStudioForm.image
+                        ? 'border-rose-400 bg-rose-50/30'
+                        : 'border-slate-200 hover:border-blue-400 bg-slate-50/60 hover:bg-blue-50/20'
+                    } rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center group`}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-blue-50 group-hover:bg-blue-100 text-blue-600 flex items-center justify-center transition mb-1.5">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-800">
+                      {isAdminDraggingOver ? 'Drop photo here' : 'Click to upload photo or drag & drop'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      JPG, PNG, WEBP · Includes edit, zoom in/out & position
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  ref={adminFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    setRegisterError('');
+                    handleImageUpload(e);
+                  }}
+                  className="hidden"
+                />
               </div>
 
               {/* Bio / Description */}
@@ -1005,6 +1056,18 @@ export default function StudiosView() {
           </button>
         </div>
       )}
+
+      {/* Admin Studio Image Crop / Zoom Modal */}
+      <ImageCropZoomModal
+        isOpen={adminCropModalOpen}
+        imageSrc={adminRawImage}
+        onClose={() => setAdminCropModalOpen(false)}
+        onSave={(croppedDataUrl) => {
+          setNewStudioForm((prev) => ({ ...prev, image: croppedDataUrl }));
+          setRegisterError('');
+        }}
+        aspectRatio={16 / 9}
+      />
     </div>
   );
 }
