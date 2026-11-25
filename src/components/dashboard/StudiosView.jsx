@@ -69,7 +69,7 @@ export default function StudiosView({ networkSettings }) {
           ? 'bg-rose-50 text-rose-700 border-rose-200/80'
           : 'bg-amber-50 text-amber-700 border-amber-200/80',
       membership: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
-        ? `Paid (${s.paidAmount ? '$' + s.paidAmount : '$200'})`
+        ? `Paid (${s.paidAmount ? '$' + s.paidAmount : (s.membershipFee ? '$' + s.membershipFee : (networkSettings?.membershipFee ? '$' + networkSettings.membershipFee : '$300'))})`
         : 'Not paid',
       membershipColor: Boolean(s.membershipPaid === true || s.paymentStatus === 'paid' || s.membership === 'Paid')
         ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
@@ -444,7 +444,7 @@ export default function StudiosView({ networkSettings }) {
           setRegisterModalOpen(false);
           fetchStudios();
         }}
-        membershipFee={networkSettings?.membershipFee || '200'}
+        membershipFee={networkSettings?.membershipFee || '300'}
         studioSpacing={networkSettings?.studioSpacing || '5'}
       />
 

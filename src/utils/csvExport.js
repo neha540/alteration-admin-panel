@@ -78,6 +78,7 @@ export const ADMIN_ORDER_CSV_HEADERS = [
 // Format an Admin Subscription/Membership record into a standardized CSV row
 export function formatAdminSubscriptionForCsv(sub) {
   const s = sub?.rawStudio || sub || {};
+  const fee = sub?.fee || s?.fee || (s?.paidAmount ? `$${s.paidAmount}` : (s?.membershipFee ? `$${s.membershipFee}` : '$300'));
   return [
     s.id || 'N/A',
     s.name || 'Studio',
@@ -86,7 +87,7 @@ export function formatAdminSubscriptionForCsv(sub) {
     s.phone || '',
     s.city || '',
     s.zip || '',
-    '$200',
+    fee,
     'Monthly',
     sub.status || (s.membership === 'Paid' ? 'Paid' : 'Payment required'),
     s.status || 'Approved',

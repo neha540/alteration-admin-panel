@@ -165,7 +165,7 @@ export default function StudioReviewModal({
   }, [studio, studiosList, activeSpacing, waiverActive, resolvedCoords]);
 
   // 2. DYNAMIC MEMBERSHIP CHECK CALCULATION
-  const membershipFee = studio.paidAmount || studio.membershipFee || networkSettings?.membershipFee || '200';
+  const membershipFee = studio.paidAmount || studio.membershipFee || networkSettings?.membershipFee || '300';
 
   // 3. DYNAMIC STUDIO APPROVAL STATUS
   const isApproved = studioStatus === 'Approved';

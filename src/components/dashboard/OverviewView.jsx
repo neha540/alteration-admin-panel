@@ -101,7 +101,7 @@ export default function OverviewView({ onNavigateTab, networkSettings }) {
   const openTickets = tickets.filter(t => t.status === 'Open' || t.status === 'open');
 
   const currentSpacing = liveSettings?.studioSpacing || networkSettings?.studioSpacing || '5';
-  const currentFee = parseFloat(liveSettings?.membershipFee || networkSettings?.membershipFee || '200') || 200;
+  const currentFee = parseFloat(liveSettings?.membershipFee || networkSettings?.membershipFee || '300') || 300;
   const monthlyRevenue = liveStudios.length * currentFee;
   const customersCount = customers.length;
 
@@ -281,7 +281,7 @@ export default function OverviewView({ onNavigateTab, networkSettings }) {
                           </h3>
                           {Boolean(studio.membershipPaid === true || studio.paymentStatus === 'paid' || studio.membership === 'Paid') ? (
                             <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Paid ({studio.paidAmount ? `$${studio.paidAmount}` : '$200'})
+                              Paid ({studio.paidAmount ? `$${studio.paidAmount}` : (studio.membershipFee ? `$${studio.membershipFee}` : `$${currentFee}`)})
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">

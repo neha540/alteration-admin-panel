@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Search, CreditCard, Download } from 'lucide-react';
 import { adminDataService } from '../../services/adminDataService';
 import StudioMembershipModal from './StudioMembershipModal';
+import StudioReviewModal from './StudioReviewModal';
 import { downloadCsvFile, ADMIN_SUBSCRIPTION_CSV_HEADERS, formatAdminSubscriptionForCsv } from '../../utils/csvExport';
 
-export default function SubscriptionsView() {
+export default function SubscriptionsView({ networkSettings }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedSubStudio, setSelectedSubStudio] = useState(null);
+  const [reviewingStudio, setReviewingStudio] = useState(null);
   const [liveStudios, setLiveStudios] = useState([]);
+  const [liveSettings, setLiveSettings] = useState(networkSettings || null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchStudios = () => {
@@ -20,27 +23,71 @@ export default function SubscriptionsView() {
       .finally(() => setIsLoading(false));
   };
 
+  const fetchSettings = () => {
+    adminDataService.getSettings()
+      .then(s => {
+        if (s) setLiveSettings(s);
+      })
+      .catch(err => console.warn('Failed to fetch settings for subscriptions:', err));
+  };
+
   useEffect(() => {
     fetchStudios();
-    const interval = setInterval(fetchStudios, 4000);
-    return () => clearInterval(interval);
+    fetchSettings();
+    const interval = setInterval(() => {
+      fetchStudios();
+      fetchSettings();
+    }, 4000);
+
+    const handleSettingsUpdated = (e) => {
+      if (e?.detail) setLiveSettings(e.detail);
+    };
+    window.addEventListener('admin_settings_updated', handleSettingsUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('admin_settings_updated', handleSettingsUpdated);
+    };
   }, []);
+
+  const defaultFeeNum = String(
+    liveSettings?.membershipFee ||
+    networkSettings?.membershipFee ||
+    (() => {
+      try {
+        const cached = localStorage.getItem('alteration_network_settings') || localStorage.getItem('alteration_admin_network_settings');
+        if (cached) return JSON.parse(cached)?.membershipFee;
+      } catch (e) {}
+      return '300';
+    })() || '300'
+  ).replace(/^\$/, '');
 
   const subsData = (liveStudios || []).map(s => {
     const isApproved = s.status === 'Approved';
     const isPaid = s.membership === 'Paid' || (isApproved && s.membership !== 'Payment required');
+    const rawStudioFee = s.paidAmount || s.membershipFee || s.subscriptionFee;
+    const cleanStudioFee = rawStudioFee ? String(rawStudioFee).replace(/^\$/, '') : defaultFeeNum;
+    const formattedFee = `$${cleanStudioFee || defaultFeeNum}`;
+
     return {
       id: s.id,
       name: s.name,
       listing: isApproved ? 'Listing live' : 'Listing not live',
       email: s.email || s.contactEmail || 'No email',
-      fee: '$200',
+      fee: formattedFee,
       feePeriod: 'per month',
       status: isPaid ? 'Paid' : 'Payment required',
       statusColor: isPaid 
         ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
         : 'bg-amber-50 text-amber-700 border-amber-200/80',
-      rawStudio: s
+      rawStudio: {
+        ...s,
+        approval: s.status || s.reviewStatus || 'Approved',
+        listing: isApproved ? 'Live' : 'Not live',
+        billingEmail: s.email || s.contactEmail || '',
+        fee: formattedFee,
+        paymentAmount: formattedFee
+      }
     };
   });
 
@@ -172,7 +219,15 @@ export default function SubscriptionsView() {
                     <td className="py-4 px-6 text-right">
                       <button
                         type="button"
-                        onClick={() => setSelectedSubStudio(s.rawStudio || s)}
+                        onClick={() => setSelectedSubStudio({
+                          ...(s.rawStudio || s),
+                          ...s,
+                          approval: s.status || s.rawStudio?.status || s.rawStudio?.reviewStatus || 'Approved',
+                          listing: (s.listing === 'Listing live' || s.rawStudio?.status === 'Approved') ? 'Live' : 'Not live',
+                          billingEmail: s.email || s.rawStudio?.email || s.rawStudio?.contactEmail || '',
+                          fee: s.fee,
+                          paymentAmount: s.fee
+                        })}
                         className="px-3.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer"
                       >
                         Manage membership
@@ -191,6 +246,10 @@ export default function SubscriptionsView() {
         <StudioMembershipModal
           studio={selectedSubStudio}
           onClose={() => setSelectedSubStudio(null)}
+          onReviewStudio={(studioToReview) => {
+            setSelectedSubStudio(null);
+            setReviewingStudio(studioToReview);
+          }}
           onGrantWaiver={async (studioId) => {
             try {
               await adminDataService.updateStudio(studioId, { membership: 'Paid', pilotWaiver: true });
@@ -208,6 +267,42 @@ export default function SubscriptionsView() {
               console.warn('Mark paid failed:', err);
             }
             setSelectedSubStudio(null);
+          }}
+        />
+      )}
+
+      {/* Studio Review Modal connected via Review studio button */}
+      {reviewingStudio && (
+        <StudioReviewModal
+          studio={reviewingStudio}
+          networkSettings={liveSettings || networkSettings}
+          onClose={() => setReviewingStudio(null)}
+          onApprove={async (id) => {
+            try {
+              await adminDataService.updateStudio(id, { status: 'Approved' });
+              fetchStudios();
+            } catch (e) {
+              console.warn('Approve failed:', e);
+            }
+            setReviewingStudio(null);
+          }}
+          onDecline={async (id) => {
+            try {
+              await adminDataService.updateStudio(id, { status: 'Declined' });
+              fetchStudios();
+            } catch (e) {
+              console.warn('Decline failed:', e);
+            }
+            setReviewingStudio(null);
+          }}
+          onGrantWaiver={async (id) => {
+            try {
+              await adminDataService.updateStudio(id, { membership: 'Paid', pilotWaiver: true });
+              fetchStudios();
+            } catch (e) {
+              console.warn('Waiver failed:', e);
+            }
+            setReviewingStudio(null);
           }}
         />
       )}

@@ -98,7 +98,7 @@ function StudioStripePaymentStep({
     setIsSubmitting(true);
 
     try {
-      const numericFee = parseFloat(String(fee || '200').replace(/[^0-9.]/g, '')) || 200;
+      const numericFee = parseFloat(String(fee || '300').replace(/[^0-9.]/g, '')) || 300;
 
       // Create PaymentIntent via backend
       const intentRes = await paymentService.createPaymentIntent({
@@ -324,7 +324,7 @@ function StudioStripePaymentStep({
 export default function StudioRegistrationModal({
   isOpen,
   onClose,
-  membershipFee = '200',
+  membershipFee = '300',
   studioSpacing = '5'
 }) {
   const fileInputRef = useRef(null);
@@ -346,7 +346,7 @@ export default function StudioRegistrationModal({
     agreed: false
   };
 
-  const [fee, setFee] = useState(membershipFee || '200');
+  const [fee, setFee] = useState(membershipFee || '300');
   const [spacing, setSpacing] = useState(studioSpacing || '5');
   const [step, setStep] = useState('details'); // 'details' | 'payment'
   const [formData, setFormData] = useState(initialFormState);

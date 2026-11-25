@@ -50,7 +50,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
   const [liveTickets, setLiveTickets] = useState([]);
   const [targetSuspendStudioId, setTargetSuspendStudioId] = useState(null);
   const [networkSettings, setNetworkSettings] = useState({
-    membershipFee: '200',
+    membershipFee: '300',
     studioSpacing: '5',
     supportEmail: 'support@alterationconnect.example'
   });
@@ -74,7 +74,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
     adminDataService.getSettings().then(s => {
       if (s) {
         setNetworkSettings({
-          membershipFee: String(s.membershipFee || '200'),
+          membershipFee: String(s.membershipFee || '300'),
           studioSpacing: String(s.studioSpacing || '5'),
           supportEmail: s.supportEmail || 'support@alterationconnect.example'
         });
@@ -95,7 +95,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
     const handleSettingsUpdate = (e) => {
       if (e?.detail) {
         setNetworkSettings({
-          membershipFee: String(e.detail.membershipFee || '200'),
+          membershipFee: String(e.detail.membershipFee || '300'),
           studioSpacing: String(e.detail.studioSpacing || '5'),
           supportEmail: e.detail.supportEmail || 'support@alterationconnect.example'
         });
@@ -428,7 +428,7 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
       {/* Screen 23: Studio membership details */}
       {activeModal === '23-membership' && (
         <StudioMembershipModal
-          studio={{ name: 'The Modern Hem', location: 'Austin, TX 78701', membership: 'Paid', fee: '$200', approval: 'Approved', listing: 'Live', billingEmail: 'olivia@modernhem.example', paymentId: 'SP-1000', paymentDate: 'Oct 1, 9:00 AM · Paid', paymentAmount: '$200' }}
+          studio={{ name: 'The Modern Hem', location: 'Austin, TX 78701', membership: 'Paid', fee: `$${networkSettings.membershipFee || '300'}`, approval: 'Approved', listing: 'Live', billingEmail: 'olivia@modernhem.example', paymentId: 'SP-1000', paymentDate: 'Oct 1, 9:00 AM · Paid', paymentAmount: `$${networkSettings.membershipFee || '300'}` }}
           onClose={() => setActiveModal(null)}
           onReviewStudio={() => setActiveModal('20-active')}
         />

@@ -314,7 +314,7 @@ export const adminDataService = {
       if (cached) return JSON.parse(cached);
     } catch (e) { }
     return {
-      membershipFee: '200',
+      membershipFee: '300',
       discoveryRadius: '15',
       studioSpacing: '5',
       supportEmail: 'support@alterationconnect.example'
