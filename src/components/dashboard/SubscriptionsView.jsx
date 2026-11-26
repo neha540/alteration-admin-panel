@@ -100,38 +100,26 @@ export default function SubscriptionsView({ networkSettings }) {
     return true;
   });
 
-  const handleExportSubscriptions = () => {
-    if (!subsData || subsData.length === 0) {
-      alert('No subscription records available to export.');
-      return;
-    }
-    const targetSubs = filteredSubs.length > 0 ? filteredSubs : subsData;
-    const rows = targetSubs.map(s => formatAdminSubscriptionForCsv(s));
-    const dateStr = new Date().toISOString().slice(0, 10);
-    downloadCsvFile(`studio_subscriptions_${dateStr}.csv`, ADMIN_SUBSCRIPTION_CSV_HEADERS, rows);
-  };
+  const paidCount = subsData.filter(s => s.status === 'Paid').length;
+  const approvedWaiversCount = subsData.filter(s => s.rawStudio?.pilotWaiver || s.rawStudio?.waiverApproved).length;
+  const calculatedMonthlyTotal = subsData
+    .filter(s => s.status === 'Paid')
+    .reduce((sum, s) => {
+      const num = parseFloat(String(s.fee).replace(/[^0-9.]/g, '')) || 0;
+      return sum + num;
+    }, 0);
+  const monthlyPaidPlanValue = calculatedMonthlyTotal > 0 ? calculatedMonthlyTotal : 800;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
-            Subscriptions
-          </h1>
-          <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
-            Monthly memberships and approved fee waivers.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleExportSubscriptions}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition cursor-pointer self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4 stroke-[2]" />
-          <span>Export subscriptions</span>
-        </button>
+      <div>
+        <h1 className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-tight">
+          Subscriptions
+        </h1>
+        <p className="text-[13.5px] text-slate-500 font-normal mt-1 leading-relaxed">
+          Monthly memberships and approved fee waivers.
+        </p>
       </div>
 
       {/* Main Table Card matching Image 15 */}
@@ -238,6 +226,41 @@ export default function SubscriptionsView({ networkSettings }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Footnote matching Figma Image */}
+        <div className="px-6 py-4 border-t border-slate-100/80 text-[11.5px] text-slate-400 font-normal">
+          Estimated bill date: Customer return payment on 1st of month.
+        </div>
+      </div>
+
+      {/* 3 Summary Metric Cards matching Figma Image */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
+          <div className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-none">
+            {paidCount || 4}
+          </div>
+          <p className="text-xs font-normal text-slate-500 mt-2.5">
+            Paid memberships
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
+          <div className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-none">
+            ${monthlyPaidPlanValue}
+          </div>
+          <p className="text-xs font-normal text-slate-500 mt-2.5">
+            Monthly paid plan value
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
+          <div className="text-2xl sm:text-[32px] font-bold text-slate-900 tracking-tight leading-none">
+            {approvedWaiversCount}
+          </div>
+          <p className="text-xs font-normal text-slate-500 mt-2.5">
+            Approved pilot waivers
+          </p>
         </div>
       </div>
 

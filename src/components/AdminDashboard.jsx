@@ -282,11 +282,10 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            {/* Interactive preview pill button */}
+            {/* Interactive preview pill */}
             <button
               type="button"
-              onClick={onBackToAuth}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white cursor-default shadow-2xs select-none"
             >
               Interactive preview
             </button>
@@ -309,17 +308,20 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
               )}
             </div>
 
+            {/* Vertical divider */}
+            <div className="h-6 w-px bg-slate-200 mx-0.5" />
+
             {/* User Profile Pill */}
             <div className="flex items-center gap-2.5 pl-1">
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700">
-                {(user?.name || user?.fullName || 'Admin').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0, 2).toUpperCase()}
+              <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center font-bold text-xs text-blue-900">
+                {user?.initials || (user?.name || 'Platform Admin').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0, 2).toUpperCase() || 'PA'}
               </div>
               <div className="hidden sm:block text-left leading-tight">
                 <span className="font-bold text-xs text-slate-900 block">
-                  {user?.name || user?.fullName || 'Admin'}
+                  {user?.name || 'Platform Admin'}
                 </span>
-                <span className="text-[11px] text-slate-400 block truncate max-w-[160px]">
-                  {user?.email || 'admin@alterationconnect.com'}
+                <span className="text-[11px] text-slate-500 block truncate max-w-[160px]">
+                  Network management
                 </span>
               </div>
             </div>
