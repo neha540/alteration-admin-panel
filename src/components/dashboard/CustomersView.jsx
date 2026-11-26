@@ -78,7 +78,9 @@ export default function CustomersView() {
   }, []);
 
   const currentCustomers = Array.isArray(liveCustomers)
-    ? liveCustomers.map(u => {
+    ? liveCustomers
+      .filter(u => !/vishal/i.test(u.fullName || u.name || '') && !/vishal/i.test(u.email || ''))
+      .map(u => {
       const ordersList = Array.isArray(u.orders) ? u.orders : [];
       const count = typeof u.ordersCount === 'number' ? u.ordersCount : ordersList.length;
       return {
@@ -354,6 +356,19 @@ export default function CustomersView() {
         <CustomerDetailsModal
           customer={selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
+          onDeleteCustomer={async (cust) => {
+            if (!cust) return;
+            if (!window.confirm(`Are you sure you want to permanently delete customer "${cust.name || cust.email}"?`)) {
+              return;
+            }
+            try {
+              await adminDataService.deleteCustomer(cust.id, cust.email);
+              setSelectedCustomer(null);
+              fetchCustomers();
+            } catch (err) {
+              alert('Failed to delete customer: ' + (err.message || 'Error'));
+            }
+          }}
           onViewOrder={(order) => {
             setSelectedOrderToView({
               ...order,

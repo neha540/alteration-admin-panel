@@ -175,6 +175,20 @@ export const adminDataService = {
     }
   },
 
+  async deleteCustomer(id, email) {
+    try {
+      const query = email ? `?email=${encodeURIComponent(email)}` : '';
+      const res = await fetch(`${API_BASE_URL}/admin/customers/${id}${query}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('Failed to delete customer:', err);
+      return { success: false, message: err.message };
+    }
+  },
+
   deriveCustomersFromOrders(orders) {
     const customerMap = new Map();
     orders.forEach(o => {

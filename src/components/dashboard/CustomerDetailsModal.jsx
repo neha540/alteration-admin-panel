@@ -1,10 +1,11 @@
 import React from 'react';
-import { ArrowLeft, X, Lock } from 'lucide-react';
+import { ArrowLeft, X, Lock, Trash2 } from 'lucide-react';
 
 export default function CustomerDetailsModal({ 
   customer, 
   onClose, 
-  onViewOrder 
+  onViewOrder,
+  onDeleteCustomer
 }) {
   const currentCustomer = customer || {
     name: 'Customer',
@@ -37,13 +38,26 @@ export default function CustomerDetailsModal({
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onDeleteCustomer && (
+              <button
+                type="button"
+                onClick={() => onDeleteCustomer(currentCustomer)}
+                className="px-2.5 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                title="Delete Customer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
