@@ -162,30 +162,33 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
   return (
     <div className="h-screen w-full flex bg-[#F8FAFC] text-slate-800 font-['Arial',sans-serif] antialiased select-none overflow-hidden">
       
-      {/* ==================== LEFT DEEP NAVY SIDEBAR ==================== */}
+      {/* ==================== LEFT DARK FOREST GREEN SIDEBAR (ADMIN EXCLUSIVE) ==================== */}
       <aside 
-        style={{ backgroundColor: '#172A45' }}
-        className="w-64 xl:w-72 text-white shrink-0 flex flex-col justify-between p-5 select-none h-screen sticky top-0 overflow-y-auto no-scrollbar"
+        style={{ backgroundColor: '#072E22' }}
+        className="w-64 xl:w-72 text-white shrink-0 flex flex-col justify-between p-5 select-none h-screen sticky top-0 overflow-y-auto no-scrollbar border-r border-[#0A3D2E]"
       >
         <div>
           {/* Brand Logo & Operations Header */}
-          <div className="pb-5 border-b border-slate-700/50">
+          <div className="pb-5 border-b border-emerald-800/40">
             {/* Transparent Brand Logo Image */}
             <div className="flex items-center">
               <AdminLogo className="h-9 sm:h-10" />
             </div>
 
             {/* Platform Admin Tag */}
-            <div className="mt-4">
-              <span className="text-[10.5px] font-bold text-slate-400 tracking-[0.2em] uppercase block">
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[10.5px] font-bold text-emerald-400 tracking-[0.2em] uppercase block">
                 PLATFORM ADMIN
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Admin view
               </span>
             </div>
 
             {/* Operations Status indicator */}
-            <div className="mt-3.5 flex items-center gap-2 text-xs text-slate-300">
+            <div className="mt-3.5 flex items-center gap-2 text-xs text-emerald-100/90">
               <span className="w-2 h-2 rounded-full bg-[#22C55E] shrink-0" />
-              <span className="font-medium text-[12px] text-slate-300">Network operations</span>
+              <span className="font-medium text-[12px] text-emerald-100">Network operations</span>
             </div>
           </div>
 
@@ -201,8 +204,8 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
                   onClick={() => handleNavClick(item.key)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-[13px] font-medium transition cursor-pointer ${
                     isActive
-                      ? 'bg-[#1E3A5F] text-white font-semibold'
-                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#0E4E3B] text-white font-semibold shadow-xs'
+                      : 'text-emerald-100/80 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -221,21 +224,21 @@ export default function AdminDashboard({ user, onSignOut, onBackToAuth, initialT
         </div>
 
         {/* Sidebar Bottom Box & Footer */}
-        <div className="pt-6 mt-6 border-t border-slate-700/50 space-y-3.5">
+        <div className="pt-6 mt-6 border-t border-emerald-800/40 space-y-3.5">
           {/* Thoughtfully Local Box */}
-          <div className="bg-[#0F1E32]/80 border border-slate-700/60 rounded-xl p-3.5">
+          <div className="bg-[#041F17]/90 border border-emerald-900/60 rounded-xl p-3.5">
             <div className="flex items-center gap-1.5 text-white font-bold text-xs">
               <ShieldCheck className="w-4 h-4 text-emerald-400 stroke-[2.2]" />
               <span>Thoughtfully local</span>
             </div>
-            <div className="text-[11.5px] text-slate-300 mt-1.5 space-y-0.5 font-normal">
+            <div className="text-[11.5px] text-emerald-100/90 mt-1.5 space-y-0.5 font-normal">
               <p>{networkSettings.studioSpacing}-mile studio spacing</p>
               <p>${networkSettings.membershipFee} monthly membership</p>
             </div>
           </div>
 
           {/* Partner support link */}
-          <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+          <div className="flex items-center justify-between text-xs text-emerald-200/70 pt-1">
             <button
               type="button"
               onClick={() => alert(`Partner support: ${networkSettings.supportEmail}`)}

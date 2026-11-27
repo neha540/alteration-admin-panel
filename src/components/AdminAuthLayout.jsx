@@ -11,13 +11,13 @@ export default function AdminAuthLayout({
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white text-slate-800 antialiased font-['Arial',sans-serif] select-none">
       
-      {/* ==================== LEFT DEEP NAVY PANEL (STICK TO LEFT) ==================== */}
+      {/* ==================== LEFT DARK FOREST GREEN PANEL (ADMIN EXCLUSIVE) ==================== */}
       <aside 
-        style={{ backgroundColor: '#172B49' }}
-        className="w-full lg:w-[440px] xl:w-[480px] text-white flex flex-col justify-between p-6 sm:p-10 lg:p-14 select-none shrink-0 min-h-screen relative overflow-hidden"
+        style={{ backgroundColor: '#072E22' }}
+        className="w-full lg:w-[440px] xl:w-[480px] text-white flex flex-col justify-between p-6 sm:p-10 lg:p-14 select-none shrink-0 min-h-screen relative overflow-hidden border-r border-[#0A3D2E]"
       >
         {/* Subtle decorative glow */}
-        <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         
         {/* Top Brand Logo Container */}
         <div className="relative z-10">
